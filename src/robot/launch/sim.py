@@ -36,11 +36,17 @@ def generate_launch_description():
         executable='simple_control',
     )
 
+    vlm_control = Node(
+        package='robot',
+        executable='vlm_control',
+    )
+
     return LaunchDescription([
         webots,
         my_robot_driver,
         rviz,
-        simple_control,
+        # simple_control,
+        vlm_control,
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,

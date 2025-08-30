@@ -16,7 +16,7 @@ setup(
     version='0.0.0',
     packages=[package_name],
     data_files=data_files,
-    install_requires=['setuptools', 'openai', 'opencv-python'],
+    install_requires=['setuptools', 'openai', 'opencv-python', 'aiohttp', 'Pillow'],
     zip_safe=True,
     maintainer='user',
     maintainer_email='user.name@mail.com',
@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'my_robot_driver = robot.my_robot_driver:main',
             'openai_control = robot.openai_control:main',
+            'vlm_control = robot.vlm_control:main',
             'ugv_driver = robot.ugv_driver:main',
             'talker = robot.talker:main',
             'listener = robot.listener:main',

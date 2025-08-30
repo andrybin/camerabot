@@ -3,6 +3,16 @@ import rclpy
 from cv_bridge import CvBridge
 from rclpy.node import Node
 from sensor_msgs.msg import Image
+# Python
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSDurabilityPolicy
+
+
+# QoS Profile
+qos = QoSProfile(
+    depth=1,  # Keep only the last message
+    history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+    durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE
+)
 
 
 class CameraPublisher(Node):
@@ -28,7 +38,7 @@ class CameraPublisher(Node):
         self.show_image = self.get_parameter('show_image').get_parameter_value().bool_value
         topic = self.get_parameter('topic').get_parameter_value().string_value
 
-        self.publisher_ = self.create_publisher(Image, topic, 10)
+        self.publisher_ = self.create_publisher(Image, topic, qos)
         self.bridge = CvBridge()
 
         # Parse source as int if possible
@@ -75,6 +85,7 @@ class CameraPublisher(Node):
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = self.frame_id
 
+        self.get_logger().info(f'Publishing image')
         self.publisher_.publish(msg)
 
         if self.show_image:

@@ -7,6 +7,17 @@ image_name=$3
 webots=${4:-false}  # Default to false (GUI mode)
 x11=${5:-false}  # Default to false (GUI mode)
 
+# If container exists, exec into it (start if needed)
+container_status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || true)
+if [ "${container_status:-}" = "running" ]; then
+  echo "📦 Container '$container_name' is already running. Executing shell..."
+  exec docker exec -it "$container_name" bash
+elif [ "${container_status:-}" = "exited" ] || [ "${container_status:-}" = "created" ] || [ "${container_status:-}" = "paused" ]; then
+  echo "📦 Container '$container_name' exists but is not running. Starting and executing shell..."
+  docker start "$container_name" >/dev/null
+  exec docker exec -it "$container_name" bash
+fi
+
 # Stop and remove existing container
 echo "🛑 Stopping existing container..."
 docker stop $container_name 2>/dev/null || true
