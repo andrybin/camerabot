@@ -33,6 +33,7 @@ setup(
             'listener = robot.listener:main',
             'simple_control = robot.simple_control:main',
             'camera = robot.camera:main',
+            'keyboard_teleop = robot.keyboard_teleop:main',
         ],
     },
 )
