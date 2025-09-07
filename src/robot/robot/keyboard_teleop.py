@@ -17,7 +17,7 @@ class KeyboardTeleopNode(Node):
 
         # Parameters for movement speeds
         self.declare_parameter('linear_speed', 0.2)
-        self.declare_parameter('angular_speed', 1.0)
+        self.declare_parameter('angular_speed', 0.2)
         self.linear_speed = float(self.get_parameter('linear_speed').value)
         self.angular_speed = float(self.get_parameter('angular_speed').value)
 
@@ -149,12 +149,12 @@ class KeyboardTeleopNode(Node):
 
     def _rotate_counterclockwise(self):
         self.current_twist.linear.x = 0.0
-        self.current_twist.angular.z = self.angular_speed
+        self.current_twist.angular.z = -self.angular_speed
         self.get_logger().info('Rotate counterclockwise')
 
     def _rotate_clockwise(self):
         self.current_twist.linear.x = 0.0
-        self.current_twist.angular.z = -self.angular_speed
+        self.current_twist.angular.z = self.angular_speed
         self.get_logger().info('Rotate clockwise')
 
     def _stop_robot(self):

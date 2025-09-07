@@ -1,5 +1,6 @@
 import base64
 import io
+from pathlib import Path
 
 import cv2
 import rclpy
@@ -31,14 +32,14 @@ class VlmControl(Node):
         # Parameters
         self.declare_parameter('camera_topic', '/camera/image_color')
         self.declare_parameter('service_url', 'http://localhost:11434/api/chat')
-        self.declare_parameter('model', 'qwen2.5vl')
+        self.declare_parameter('model', 'qwen2.5vl:3b')
         self.declare_parameter('prompt', 'if you see a CUP print <GO>, if you see a red duck print <STOP>')
         self.declare_parameter('max_width', 640)
         self.declare_parameter('max_height', 480)
         self.declare_parameter('quality', 85)
         self.declare_parameter('period_s', 1.0)
         self.declare_parameter('linear_speed_constant', 0.1)
-        self.declare_parameter('angular_speed_constant', 1)
+        self.declare_parameter('angular_speed_constant', 0.1)
 
         self.camera_topic = self.get_parameter('camera_topic').get_parameter_value().string_value
         self.service_url = self.get_parameter('service_url').get_parameter_value().string_value
@@ -146,37 +147,32 @@ class VlmControl(Node):
         command = Twist()
         command.linear.x = 0.0
         command.angular.z = 0.0
-        if '<GO>' in response_text:
-            command.linear.x = self.linear_speed_constant
-            self.get_logger().info('Moving forward - GO signal received')
+
         if '<STOP>' in response_text:
             command.linear.x = 0.0
-            self.get_logger().info('Stopping - STOP signal received')
-        if '<TURN_LEFT>' in response_text:
-            command.angular.z = self.angular_speed_constant
-            self.get_logger().info('Turning left - TURN_LEFT signal received')
-        if '<TURN_RIGHT>' in response_text:
+            self.get_logger().info('STOP signal received')        
+        if '<FORWARD>' in response_text:
+            command.linear.x = self.linear_speed_constant
+            self.get_logger().info('FORWARD signal received')
+        if '<BACK>' in response_text:
+            command.linear.x = -self.linear_speed_constant
+            self.get_logger().info('BACKWARD signal received')
+        if '<LEFT>' in response_text:
             command.angular.z = -self.angular_speed_constant
-            self.get_logger().info('Turning right - TURN_RIGHT signal received')
+            command.linear.x = self.linear_speed_constant
+            self.get_logger().info('TURN_LEFT signal received')
+        if '<RIGHT>' in response_text:
+            command.angular.z = self.angular_speed_constant
+            command.linear.x = self.linear_speed_constant
+            self.get_logger().info('TURN_RIGHT signal received')
+            
         self.cmd_vel_publisher.publish(command)
 
 
 def main(args=None):
     rclpy.init(args=args)
     node = VlmControl()
-    node.prompt="""
-You are a small robot with camera navigating in a room.
-IMPORTANT RULES:
-1. Your goal is to get close to CUP
-2. Visible size of CUP must be approximately 90% of the frame size and in the center of the frame
-3. If you're don't see the CUP on image, stay on and turn left or right to find it
-4. If you need to get closer, GO
-5. If you need to turn left, to make target in the center of the frame, TURN_LEFT
-6. If you need to turn right, to make target in the center of the frame, TURN_RIGHT
-6. Always give an estimation of the visible size and position of the CUP in the center of the frame
-8. Always explain your decision before giving your command 
-9. Add to your answer command '<GO>' to move forward or '<STOP>' to stop or '<TURN_LEFT>' to turn left or '<TURN_RIGHT>' to turn right
-"""
+    node.prompt=Path('src/robot/resource/vlm_prompt.txt').read_text()
     try:
         print('spinning')
         rclpy.spin(node)
