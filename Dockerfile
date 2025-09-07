@@ -17,7 +17,13 @@ RUN apt-get update && apt-get install -y \
     sudo \
     python3-cv-bridge \
     python3-opencv \
-    v4l-utils
+    v4l-utils \
+    # Picamera2 + libcamera dependencies
+    libcamera0 \
+    libcamera-tools \
+    libcamera-dev \
+    libcap-dev \
+    python3-prctl
 
 # Conditionally install Webots based on WEBOTS argument
 ARG WEBOTS_VERSION=2025a
@@ -73,7 +79,9 @@ COPY src/robot/requirements.txt /home/$USERNAME/requirements.txt
 RUN echo "source /opt/ros/humble/setup.sh" >> ~/.bashrc \
     && echo "cd /home/$USERNAME/camerabot" >> ~/.bashrc \
     && . /opt/ros/humble/setup.sh \
-    && pip3 install -r /home/$USERNAME/requirements.txt
+    && pip3 install -r /home/$USERNAME/requirements.txt \
+    # Install Picamera2 in the image so camera works in container
+    && pip3 install --no-cache-dir picamera2
 
 # Set default command
 CMD ["bash"] 
