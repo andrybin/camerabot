@@ -5,8 +5,8 @@ HALF_DISTANCE_BETWEEN_WHEELS = 0.045
 WHEEL_RADIUS = 0.025
 
 class MyRobotDriver:
-    def init(self, webots_node, properties):
-        self.__robot = webots_node.robot
+    def init(self, robot_node, properties):
+        self.__robot = robot_node.robot
 
         self.__left_motor = self.__robot.getDevice('left wheel motor')
         self.__right_motor = self.__robot.getDevice('right wheel motor')

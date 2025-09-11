@@ -7,6 +7,17 @@ image_name=$3
 webots=${4:-false}  # Default to false (GUI mode)
 x11=${5:-false}  # Default to false (GUI mode)
 
+# If container exists, exec into it (start if needed)
+container_status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || true)
+if [ "${container_status:-}" = "running" ]; then
+  echo "📦 Container '$container_name' is already running. Executing shell..."
+  exec docker exec -it "$container_name" bash
+elif [ "${container_status:-}" = "exited" ] || [ "${container_status:-}" = "created" ] || [ "${container_status:-}" = "paused" ]; then
+  echo "📦 Container '$container_name' exists but is not running. Starting and executing shell..."
+  docker start "$container_name" >/dev/null
+  exec docker exec -it "$container_name" bash
+fi
+
 # Stop and remove existing container
 echo "🛑 Stopping existing container..."
 docker stop $container_name 2>/dev/null || true
@@ -18,6 +29,27 @@ export USER_GID=$(id -g)
 export USERNAME=$USER
 export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
 
+# Resolve host group IDs for common device groups so the in-container user
+# gets proper access to /dev entries when /dev is bind-mounted.
+get_gid() { getent group "$1" | cut -d: -f3 || true; }
+
+VIDEO_GID=$(get_gid video)
+RENDER_GID=$(get_gid render)
+DIALOUT_GID=$(get_gid dialout)
+INPUT_GID=$(get_gid input)
+GPIO_GID=$(get_gid gpio)
+I2C_GID=$(get_gid i2c)
+SPI_GID=$(get_gid spi)
+PLUGDEV_GID=$(get_gid plugdev)
+
+# Build supplemental group args, using numeric GIDs so they match host /dev nodes
+GROUP_ARGS=""
+for gid in "$VIDEO_GID" "$RENDER_GID" "$DIALOUT_GID" "$INPUT_GID" "$GPIO_GID" "$I2C_GID" "$SPI_GID" "$PLUGDEV_GID"; do
+  if [ -n "$gid" ]; then
+    GROUP_ARGS="$GROUP_ARGS --group-add $gid"
+  fi
+done
+
 #  3. Create Docker network for ROS2 containers
 # echo "🌐 Creating ROS2 network..."
 # docker network create camerabot_network 2>/dev/null || echo "Network already exists"
@@ -25,6 +57,8 @@ export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
 #  4. Build and run Docker container 
 echo "🔨 Building ROS 2 Docker image for" $ros_distro " webots:" $webots " x11:" $x11 "..."
 # Build the Docker image with platform with specification and build args
+# If image doesn't exist, build it
+if [ "$(docker images -q $image_name 2> /dev/null)" == "" ]; then
 docker build \
   --build-arg ROS_DISTRO=$ros_distro \
   --build-arg WEBOTS=$webots \
@@ -32,15 +66,19 @@ docker build \
   --build-arg USER_GID=${USER_GID} \
   --build-arg USERNAME=${USERNAME} \
   -t $image_name .
+fi
 
 # Set up X11 forwarding only if not in headless mode
-if [ "$x11" != "false" ]; then
+if [ "$x11" == "true" ]; then
   echo "🖥️  Setting up X11 forwarding for GUI mode..."
   xhost +local:docker
   X11_ARGS="--env QT_X11_NO_MITSHM=1 \
   --device /dev/dri \
-  --env DISPLAY=$DISPLAY \
+  --env DISPLAY=host.docker.internal:0 \
+  --env _XEVENT_TRACE=1 \
+  --env QT_DEBUG_PLUGINS=1 \
   --volume /tmp/.X11-unix:/tmp/.X11-unix"
+  X11_ARGS="$X11_ARGS --env DISPLAY=$DISPLAY" # added for linux
 else
   echo "🚫 Running in headless mode (no GUI support)"
   X11_ARGS=""
@@ -65,7 +103,7 @@ docker run -it \
   --device /dev/video1:/dev/video1 \
   --device /dev/media0:/dev/media0 \
   --device /dev/media1:/dev/media1 \
-  --group-add video \
+  $GROUP_ARGS \
   --privileged \
   $image_name \
-  bash -c "echo ✅  Done! && echo Next: colcon build && bash"
+  bash -c "echo ✅  Done! && echo Next: colcon build && echo . e && bash"

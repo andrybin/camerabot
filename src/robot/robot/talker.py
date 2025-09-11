@@ -14,7 +14,7 @@ class TalkerNode(Node):
         super().__init__('talker')
         
         # Create a publisher for String messages on the 'chatter' topic
-        self.publisher = self.create_publisher(String, 'chatter', 10)
+        self.publisher = self.create_publisher(String, 'chatter', 1)
         
         # Create a timer that calls the timer_callback function every 1 second
         timer_period = 1.0  # seconds

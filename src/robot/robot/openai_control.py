@@ -26,14 +26,14 @@ class OpenAIAPINode(Node):
             Image,
             '/camera/image_color',
             self.image_callback,
-            10
+            1
         )
         
         # Publisher for robot movement commands
         self.cmd_vel_publisher = self.create_publisher(
             Twist,
             'cmd_vel',
-            10
+            1
         )
         
         # Timer to process images periodically (every 2 seconds)

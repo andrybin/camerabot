@@ -18,7 +18,7 @@ class ListenerNode(Node):
             String,
             'chatter',
             self.listener_callback,
-            10
+            1
         )
         
         self.get_logger().info('Listener node has been started')

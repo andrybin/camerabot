@@ -1,0 +1,1 @@
+ros2 run robot camera --ros-args -p source:=picam2 -p width:=320 -p height:=240 -p fps:=10 -p frame_id:=camera -p encoding:=rgb8 -p topic:=/camera/image_color

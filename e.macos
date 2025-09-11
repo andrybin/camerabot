@@ -1,0 +1,16 @@
+#!/bin/bash
+# This script sets up the ROS2 environment for conda
+# IMPORTANT: Use "source ./e" or ". ./e" instead of "./e"
+# to make the environment changes persist in your current shell
+
+# Activate conda ROS2 environment
+source ~/miniforge3/etc/profile.d/conda.sh
+conda activate ros2
+
+# Source the local setup if it exists
+if [ -f "install/local_setup.sh" ]; then
+    source install/local_setup.sh
+fi
+
+echo "ROS2 environment activated from conda"
+echo "Current Python: $(which python)"

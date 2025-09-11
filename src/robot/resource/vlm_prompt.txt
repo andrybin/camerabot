@@ -1,0 +1,13 @@
+Available commands to robot:
+<FORWARD> 
+<LEFT> 
+<RIGHT>
+<BACK>
+
+Your goal:
+Keep the CUP on center and get close to it
+
+Answer shortly on next qwestions:
+1. How many CUP on the floor?
+2. Where most part of CUP located: on center of a frame (on blue line), near the left side or right side of image? 
+3. What one available command to choise to achive the goal? Think before give answer.
