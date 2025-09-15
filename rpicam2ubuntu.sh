@@ -79,15 +79,6 @@ PY
   cam -l || true
   echo "  - If no cameras are listed, try rebooting: sudo reboot"
 
-  # Optional: run repo test if present
-  cd "$start_dir"
-  if [ -f "cv2_test.py" ]; then
-    echo "Running cv2_test.py (headless)"
-    python3 cv2_test.py || true
-  else
-    echo "Note: cv2_test.py not found in current directory ($(pwd)). Skipping test run."
-  fi
-
   echo "Done. Re-login or 'source ~/.profile' to persist environment.";
 }
 
@@ -98,5 +89,3 @@ ensure_profile_line() {
 }
 
 main "$@"
-
-
