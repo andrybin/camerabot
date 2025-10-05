@@ -1,13 +1,27 @@
-## Part 1
+## Installation on RaspberryPI5
+### 1. Setup Docker
 ```
-bash ./start_host.sh
-ros2 launch robot sim.py
+curl -fsSL https://get.docker.com -o get-docker.sh &&\
+sudo sh get-docker.sh &&\
+sudo usermod -aG docker $USER
 ```
+Then relogin!
 
-## Part 2
+### 2. Clone this repo
 ```
-bash ./start_host.sh
-source install/local_setup.sh
-python3 src/robot/test_openai_setup.py
-ros2 launch robot openai_api.py
+git clone https://github.com/andrybin/camerabot.git
 ```
+### 3. Setup ROS2-docker on robot
+```
+cd camerabot
+chmod +x robot.sh
+./robot.sh
+```
+### 4. Test camera
+Continue from step 3 inside cmerabot container
+```
+Test camera (if you physically install camera only now - restart RPI5 after installation and run robot.sh):
+```
+tools/picamera_test.py
+```
+Check frames on GUI-window or tes_frame.jpg file
