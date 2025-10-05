@@ -57,7 +57,6 @@ done
 #  4. Build and run Docker container 
 echo "🔨 Building ROS 2 Docker image for" $ros_distro " webots:" $webots " x11:" $x11 "..."
 # Build the Docker image with platform with specification and build args
-# If image doesn't exist, build it
 if [ "$(docker images -q $image_name 2> /dev/null)" == "" ]; then
 docker build \
   --build-arg ROS_DISTRO=$ros_distro \
@@ -70,7 +69,7 @@ fi
 
 # Set up X11 forwarding only if not in headless mode
 if [ "$x11" == "true" ]; then
-  echo "🖥️  Setting up X11 forwarding for GUI mode..."
+  echo "🖥️ Setting up X11 forwarding for GUI mode..."
   xhost +local:docker
   X11_ARGS="--env QT_X11_NO_MITSHM=1 \
   --device /dev/dri \
@@ -85,7 +84,6 @@ else
 fi
 
 echo "🚀 Starting ROS 2 container..."
-echo "📷 Enabling camera access for Raspberry Pi..."
 
 # Run the container with network configuration and camera support
 docker run -it \
@@ -106,4 +104,8 @@ docker run -it \
   $GROUP_ARGS \
   --privileged \
   $image_name \
-  bash -c "echo ✅  Done! && echo Next: colcon build && echo . e && bash"
+  bash -c "echo 📷 Enabling camera access for Raspberry Pi... && bash rpicam2ubuntu.sh &&\
+           echo ✅  Done! Next steps: &&\
+           echo build packeges: colcon build &&\
+           echo every time source environment: . e &&\
+           bash"
