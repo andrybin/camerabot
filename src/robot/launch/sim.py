@@ -17,7 +17,7 @@ def generate_launch_description():
         world=os.path.join(package_dir, 'worlds', 'my_world.wbt')
     )
 
-    my_robot_driver = WebotsController(
+    webots_driver = WebotsController(
         robot_name='my_robot',
         parameters=[
             {'robot_description': robot_description_path},
@@ -43,10 +43,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         webots,
-        my_robot_driver,
+        webots_driver,
         rviz,
         # simple_control,
-        vlm_control,
+        # vlm_control,
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,

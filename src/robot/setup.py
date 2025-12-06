@@ -16,7 +16,7 @@ setup(
     version='0.0.0',
     packages=[package_name],
     data_files=data_files,
-    install_requires=['setuptools', 'openai', 'opencv-python', 'aiohttp', 'Pillow'],
+    install_requires=['setuptools', 'openai', 'opencv-python', 'aiohttp', 'Pillow', 'pyserial', 'numpy', 'requests'],
     zip_safe=True,
     maintainer='user',
     maintainer_email='user.name@mail.com',
@@ -25,7 +25,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'my_robot_driver = robot.my_robot_driver:main',
+            'webots_driver = robot.webots_driver:main',
             'openai_control = robot.openai_control:main',
             'vlm_control = robot.vlm_control:main',
             'ugv_driver = robot.ugv_driver:main',

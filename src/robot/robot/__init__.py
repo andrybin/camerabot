@@ -1,8 +1,8 @@
 
-from .my_robot_driver import MyRobotDriver
 from .ugv_driver import UGVDriver
+from .webots_driver import WebotsDriver
 
 __all__ = [
-    "MyRobotDriver",
+    "WebotsDriver",
     "UGVDriver",
 ]
