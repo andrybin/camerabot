@@ -71,13 +71,30 @@ fi
 if [ "$x11" == "true" ]; then
   echo "🖥️ Setting up X11 forwarding for GUI mode..."
   xhost +local:docker
+  
+  # Get XAUTHORITY path (set by SSH -X)
+  XAUTH_PATH=${XAUTHORITY:-$HOME/.Xauthority}
+  
+  # Ensure XAUTHORITY file exists and is readable
+  if [ -f "$XAUTH_PATH" ]; then
+    echo "🔐 Found XAUTHORITY at $XAUTH_PATH"
+    XAUTH_VOLUME="--volume $XAUTH_PATH:$XAUTH_PATH:ro"
+    XAUTH_ENV="--env XAUTHORITY=$XAUTH_PATH"
+  else
+    echo "⚠️  XAUTHORITY not found, X11 may not work properly"
+    XAUTH_VOLUME=""
+    XAUTH_ENV=""
+  fi
+  
   X11_ARGS="--env QT_X11_NO_MITSHM=1 \
   --device /dev/dri \
-  --env DISPLAY=host.docker.internal:0 \
+  --env DISPLAY=$DISPLAY \
   --env _XEVENT_TRACE=1 \
   --env QT_DEBUG_PLUGINS=1 \
-  --volume /tmp/.X11-unix:/tmp/.X11-unix"
-  X11_ARGS="$X11_ARGS --env DISPLAY=$DISPLAY" # added for linux
+  --env QT_QPA_PLATFORM=xcb \
+  --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  $XAUTH_VOLUME \
+  $XAUTH_ENV"
 else
   echo "🚫 Running in headless mode (no GUI support)"
   X11_ARGS=""

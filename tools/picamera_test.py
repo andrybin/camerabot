@@ -25,9 +25,7 @@ try:
     else:
         for _ in range(100):
             frame = picam2.capture_array()
-            # XRGB8888 -> OpenCV expects BGR; drop alpha and convert RGB to BGR
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-            cv2.imshow("Frame", frame_bgr)
+            cv2.imshow("Frame", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             time.sleep(0.001)
