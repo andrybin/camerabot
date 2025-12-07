@@ -10,10 +10,8 @@ BAUD_RATE = "UGV_BAUD"
 
 
 class UGVDriver(BaseDriver):
-    def __init__(self, half_wheel_separation=1, max_linear_speed=255, steps_without_command_threshold=30) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.__half_wheel_separation = half_wheel_separation
-        self.__max_linear_speed = max_linear_speed
 
         # Serial connection parameters (overridable via properties or env)
         uart_dev = os.environ.get(UART_DEV, "/dev/ttyAMA0")
@@ -28,7 +26,7 @@ class UGVDriver(BaseDriver):
 
 def main(args: Optional[list[str]] = None) -> None:
     del args
-    driver = UGVDriver(half_wheel_separation=1, max_linear_speed=255)
+    driver = UGVDriver()
     try:
         while True:
             driver.step()
