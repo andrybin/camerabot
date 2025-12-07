@@ -47,12 +47,23 @@ chmod +x robot.sh
 ```
 ### 4. Test camera
 Continue from step 3 inside cmerabot container
-```
+
 Test camera (if you physically install camera only now - restart RPI5 after installation and run robot.sh):
 ```
 python3 tools/picamera_test.py
 ```
 Check frames on GUI-window or test_frame.jpg file
+
+### 5. Configure connection
+Enable I2C and SPI alowing to see UART device (in my case /dev/ttyAMA0)
+```
+sudo raspi-config nonint do_i2c 0
+sudo raspi-config nonint do_spi 0
+```
+Optionally use GUI menu
+```
+sudo raspi-config
+```
 
 ## Set up both
 ### 1. Test communication between robot and host

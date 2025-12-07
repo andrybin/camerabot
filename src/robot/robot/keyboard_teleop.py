@@ -82,18 +82,6 @@ class KeyboardTeleopNode(Node):
                         self._handle_arrow_key(seq)
                     elif key == b' ':  # Space bar
                         self._stop_robot()
-                    elif key in (b'q', b'Q'):
-                        # Optional quick exit: stop and continue running until the node is shutdown
-                        self._stop_robot()
-                    elif key in (b'w', b'W'):
-                        self._move_forward()
-                    elif key in (b's', b'S'):
-                        self._move_backward()
-                    elif key in (b'a', b'A'):
-                        self._rotate_counterclockwise()
-                    elif key in (b'd', b'D'):
-                        self._rotate_clockwise()
-                    # Ignore other keys
         except (OSError, ValueError) as exc:
             self.get_logger().error(f'Keyboard loop error: {exc}')
         finally:
@@ -138,7 +126,8 @@ class KeyboardTeleopNode(Node):
             self._rotate_clockwise()
 
     def _move_forward(self):
-        self.current_twist.linear.x = self.linear_speed
+        self.current_twist.linear.x += self.linear_speed
+        print(self.current_twist)
         self.current_twist.angular.z = 0.0
         self.get_logger().info('Move forward')
 
