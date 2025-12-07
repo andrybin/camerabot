@@ -53,3 +53,33 @@ Test camera (if you physically install camera only now - restart RPI5 after inst
 python3 tools/picamera_test.py
 ```
 Check frames on GUI-window or test_frame.jpg file
+
+## Set up both
+### 1. Test communication between robot and host
+On robot:
+```
+ros2 run robot talker
+```
+On host:
+```
+ros2 run robot listener
+```
+
+### 2. Test camera streem and control
+On robot:
+```
+# first terminal
+ros2 run robot camera
+
+# second terminal
+ros2 run robot ugv_contol
+```
+
+On host:
+```
+# first terminal to show image
+rqt
+
+# second terminal
+ros2 run robot keyboard_teleop
+```

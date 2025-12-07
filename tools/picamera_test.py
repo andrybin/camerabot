@@ -1,7 +1,5 @@
 import os
-import sys
 import time
-
 import cv2
 from picamera2 import Picamera2
 
@@ -13,22 +11,29 @@ picam2.start()
 
 headless = not bool(os.environ.get("DISPLAY"))
 
+def show_img():
+    for _ in range(10):
+        frame = picam2.capture_array()
+        cv2.imshow("Frame", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        time.sleep(0.001)
+
+def save_img():
+    for _ in range(10):
+        frame = picam2.capture_array()
+        cv2.imwrite("test_frame.jpg", frame)
+        print("Wrote test_frame.jpg")
+        time.sleep(0.5)
+
 try:
     if headless:
-        print("Running in headless mode: writing frames to test_frame.jpg (Ctrl+C to stop)")
-        for _ in range(100):
-            frame = picam2.capture_array()
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-            cv2.imwrite("test_frame.jpg", frame_bgr)
-            print("Wrote test_frame.jpg")
-            time.sleep(0.5)
+        save_img()
     else:
-        for _ in range(100):
-            frame = picam2.capture_array()
-            cv2.imshow("Frame", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            time.sleep(0.001)
+        try:
+            show_img()
+        except:
+            save_img()
 finally:
     picam2.stop()
     if not headless:

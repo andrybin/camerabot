@@ -21,7 +21,7 @@ class CameraPublisher(Node):
         super().__init__('camera_publisher')
 
         # Parameters
-        self.declare_parameter('source', '0')  # camera index or URL or [picam2 libcamera rpicam]
+        self.declare_parameter('source', 'picam2')  # camera index or URL or [picam2 libcamera rpicam]
         self.declare_parameter('width', 640)
         self.declare_parameter('height', 480)
         self.declare_parameter('fps', 30)
@@ -144,6 +144,8 @@ class CameraPublisher(Node):
             try:
                 frame = self.picam2.capture_array()
                 ok = frame is not None
+                if ok:
+                    self.get_logger().debug(f'Got frame {frame.shape} from picamera')
             except Exception:
                 ok = False
         else:

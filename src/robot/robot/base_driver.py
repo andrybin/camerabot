@@ -4,9 +4,9 @@ import rclpy
 from geometry_msgs.msg import Twist
 from rclpy.node import Node
 
-HALF_DISTANCE_BETWEEN_WHEELS = 0.045
-WHEEL_RADIUS = 0.01
-DEFAULT_STEPS_WITHOUT_COMMAND_THRESHOLD = 60000000
+HALF_DISTANCE_BETWEEN_WHEELS = 1.
+WHEEL_RADIUS = 1.
+DEFAULT_STEPS_WITHOUT_COMMAND_THRESHOLD = 60
 
 class BaseDriver(Node):
     def __init__(self):
@@ -25,8 +25,9 @@ class BaseDriver(Node):
         forward_speed = self._target_twist.linear.x
         angular_speed = self._target_twist.angular.z
 
-        command_motor_left = (forward_speed - angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) / WHEEL_RADIUS
-        command_motor_right = (forward_speed + angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) / WHEEL_RADIUS
+        # Minus for correct rotation direction
+        command_motor_left = -(forward_speed - angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) / WHEEL_RADIUS
+        command_motor_right = -(forward_speed + angular_speed * HALF_DISTANCE_BETWEEN_WHEELS) / WHEEL_RADIUS
 
         return command_motor_left, command_motor_right
 
@@ -42,6 +43,4 @@ class BaseDriver(Node):
         if self.steps_without_command > self.steps_without_command_threshold:
             self._target_twist = Twist()
 
-
-        command_motor_left, command_motor_right = self.set_left_right_wheels_velocity()
-        self.velocity_to_motors(command_motor_left, command_motor_right)
+        self.velocity_to_motors(*self.set_left_right_wheels_velocity())
