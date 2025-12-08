@@ -12,7 +12,7 @@ picam2.start()
 headless = not bool(os.environ.get("DISPLAY"))
 
 def show_img():
-    for _ in range(10):
+    while True:
         frame = picam2.capture_array()
         cv2.imshow("Frame", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
