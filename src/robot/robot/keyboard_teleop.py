@@ -78,7 +78,7 @@ class KeyboardTeleopNode(Node):
                     key = os.read(self._tty_fd, 1)
                     if key == b'\x1b':
                         seq = self._read_escape_sequence()
-                        self.get_logger().info(f'Key sequence: {repr(seq)}')
+                        self.get_logger().debug(f'Key sequence: {repr(seq)}')
                         self._handle_arrow_key(seq)
                     elif key == b' ':  # Space bar
                         self._stop_robot()
@@ -126,30 +126,35 @@ class KeyboardTeleopNode(Node):
             self._rotate_clockwise()
 
     def _move_forward(self):
-        self.current_twist.linear.x += self.linear_speed
-        print(self.current_twist)
+        if self.current_twist.linear.x > 0:
+            # 🚀 Increment speed if already moving forward
+            self.current_twist.linear.x += self.linear_speed
+        else:
+            # 🚗 Set speed to default if not moving forward
+            self.current_twist.linear.x = self.linear_speed
         self.current_twist.angular.z = 0.0
-        self.get_logger().info('Move forward')
+        self.get_logger().info(f'🟢 Move forward: {self.current_twist.linear.x:.2f}')
 
     def _move_backward(self):
         self.current_twist.linear.x = -self.linear_speed
         self.current_twist.angular.z = 0.0
-        self.get_logger().info('Move backward')
+        self.get_logger().info(f'🔴 Move backward: {self.current_twist.linear.x:.2f}')
 
     def _rotate_counterclockwise(self):
         self.current_twist.linear.x = 0.0
         self.current_twist.angular.z = -self.angular_speed
-        self.get_logger().info('Rotate counterclockwise')
+        self.get_logger().info(f'🔄 Rotate counterclockwise: {self.current_twist.angular.z:.2f}')
 
     def _rotate_clockwise(self):
         self.current_twist.linear.x = 0.0
         self.current_twist.angular.z = self.angular_speed
-        self.get_logger().info('Rotate clockwise')
+        self.get_logger().info(f'🔁 Rotate clockwise: {self.current_twist.angular.z:.2f}')
 
     def _stop_robot(self):
         self.current_twist.linear.x = 0.0
         self.current_twist.angular.z = 0.0
-        self.get_logger().info('Stop')
+        self.get_logger().info('⛔ Stop')
+
 
     def destroy_node(self):
         self._keep_running = False
