@@ -3,7 +3,6 @@
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2022b/projects/objects/floors/protos/CircleArena.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/toys/protos/RubberDuck.proto"
 
 WorldInfo {
 }
@@ -141,7 +140,8 @@ Robot {
     }
     Camera {
       translation 0.05 0 0.08
-      fieldOfView 1
+      rotation 0 1 0 0.3
+      fieldOfView 2
       width 640
       height 480
     }
@@ -157,7 +157,25 @@ Robot {
   }
   controller "<extern>"
 }
-RubberDuck {
-  translation 0.51 0 0.02
+Solid {
+  translation 0.3 0.1 0.04
   rotation 0 0 1 1.5708
+  children [
+    Shape {
+      appearance PBRAppearance {
+            baseColor 1 1 1
+        roughness 0.4
+        metalness 0
+      }
+      geometry Sphere {
+        radius 0.04
+      }
+    }
+  ]
+  boundingObject Sphere {
+    radius 0.04
+  }
+  physics Physics {
+    mass 0.0027
+  }
 }
