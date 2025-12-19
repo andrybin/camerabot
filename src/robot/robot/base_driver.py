@@ -6,7 +6,7 @@ from rclpy.node import Node
 
 HALF_DISTANCE_BETWEEN_WHEELS = 1.
 WHEEL_RADIUS = 1.
-DEFAULT_STEPS_WITHOUT_COMMAND_THRESHOLD = 30
+DEFAULT_STEPS_WITHOUT_COMMAND_THRESHOLD = 20
 
 class BaseDriver(Node):
     def __init__(self):
