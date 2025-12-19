@@ -11,4 +11,4 @@ Using available commands to correct your direction get close to WHITE BALL as mu
 2. Where the WHITE BALL located: near the center of a frame, close to the left side or right side of image?
 3. Turn left if WHITE BALL is near the left side of image
 4. Turn right if WHITE BALL is near the right side of image
-5. Analize history. Think before give answer. What one available command to choise to achive the goal?
+5. Think before give answer. What one available command to choise to achive the goal?

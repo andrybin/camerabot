@@ -4,7 +4,8 @@ package_name = 'robot'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
 data_files.append(('share/' + package_name + '/launch', ['launch/sim.py']))
-data_files.append(('share/' + package_name + '/launch', ['launch/openai_control_launch.py']))
+data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_sim.py']))
+data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_ugv.py']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
 data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
 data_files.append(('share/' + package_name + '/resource', ['resource/default.rviz']))
@@ -16,7 +17,7 @@ setup(
     version='0.0.0',
     packages=[package_name],
     data_files=data_files,
-    install_requires=['setuptools', 'openai', 'opencv-python', 'aiohttp', 'Pillow', 'pyserial', 'numpy', 'requests'],
+    install_requires=['setuptools', 'opencv-python', 'aiohttp', 'Pillow', 'pyserial', 'numpy', 'requests'],
     zip_safe=True,
     maintainer='user',
     maintainer_email='user.name@mail.com',
@@ -26,7 +27,6 @@ setup(
     entry_points={
         'console_scripts': [
             'webots_driver = robot.webots_driver:main',
-            'openai_control = robot.openai_control:main',
             'vlm_control = robot.vlm_control:main',
             'ugv_driver = robot.ugv_driver:main',
             'talker = robot.talker:main',
