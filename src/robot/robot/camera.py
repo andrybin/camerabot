@@ -169,12 +169,6 @@ class CameraPublisher(Node):
             except Exception:
                 pass
 
-        # frame = cv2.rotate(frame, cv2.ROTATE_180)
-        # draw a red rectangle with 10% padding around the frame
-        padding_xy = (int(frame.shape[1] * 0.5), int(frame.shape[0] * 0.))
-        cv2.line(frame, (padding_xy[0], 0), (padding_xy[0], frame.shape[1]), (0, 0, 255), 2)
-        # cv2.line(frame, (frame.shape[1] - padding[0], 0), (frame.shape[1] - padding[0], frame.shape[1]), (255, 0, 0), 2)
-
         msg = self.bridge.cv2_to_imgmsg(frame, encoding=self.encoding)
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.header.frame_id = self.frame_id
