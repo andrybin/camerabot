@@ -1,3 +1,6 @@
+# CAMERABOT
+![jjj](assets/real_drive_1.gif)
+
 ## Install on host-mashine
 ### 1. Run container and enter
 ```
