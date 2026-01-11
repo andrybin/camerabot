@@ -3,6 +3,8 @@ import os
 import launch
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from webots_ros2_driver.webots_controller import WebotsController
 from webots_ros2_driver.webots_launcher import WebotsLauncher
@@ -11,7 +13,6 @@ from webots_ros2_driver.webots_launcher import WebotsLauncher
 def generate_launch_description():
     package_dir = get_package_share_directory('robot')
     robot_description_path = os.path.join(package_dir, 'resource', 'my_robot.urdf')
-    rviz_config_path = os.path.join(package_dir, 'resource', 'default.rviz')
 
     webots = WebotsLauncher(
         world=os.path.join(package_dir, 'worlds', 'my_world.wbt')
@@ -24,29 +25,22 @@ def generate_launch_description():
         ]
     )
 
-    rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=['-d', rviz_config_path],
-    )
-
-    simple_control = Node(
-        package='robot',
-        executable='simple_control',
-    )
-
     vlm_control = Node(
         package='robot',
         executable='vlm_control',
     )
 
+    vlm_control_sim = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(package_dir, 'launch', 'vlm_control_sim.py'),
+        ),
+    )
+
     return LaunchDescription([
         webots,
         webots_driver,
-        rviz,
-        # simple_control,
-        # vlm_control,
+        vlm_control,
+        vlm_control_sim,
         launch.actions.RegisterEventHandler(
             event_handler=launch.event_handlers.OnProcessExit(
                 target_action=webots,

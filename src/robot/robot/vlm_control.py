@@ -32,14 +32,14 @@ class VlmControl(Node):
         # Parameters
         self.declare_parameter('camera_topic', '/camera/image_color')
         self.declare_parameter('service_url', 'http://localhost:11434/api/chat')
-        self.declare_parameter('model', 'qwen2.5vl:3b')
+        self.declare_parameter('model', 'qwen2.5vl:latest')
         self.declare_parameter('prompt', 'if you see a CUP print <GO>, if you see a red duck print <STOP>')
-        self.declare_parameter('max_width', 640)
+        self.declare_parameter('max_width', 480)
         self.declare_parameter('max_height', 480)
         self.declare_parameter('quality', 85)
         self.declare_parameter('period_s', 1.0)
-        self.declare_parameter('linear_speed_constant', 0.1)
-        self.declare_parameter('angular_speed_constant', 0.1)
+        self.declare_parameter('linear_speed_constant', 0.15) #0.15 1
+        self.declare_parameter('angular_speed_constant', 0.2) #0.2 0.3
 
         self.camera_topic = self.get_parameter('camera_topic').get_parameter_value().string_value
         self.service_url = self.get_parameter('service_url').get_parameter_value().string_value
@@ -61,7 +61,7 @@ class VlmControl(Node):
         self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 1)
 
         self.create_subscription(RosImage, self.camera_topic, self.image_callback, qos)
-        # self.timer = self.create_timer(self.period_s, self.timer_callback)
+        self.history = []
 
         # Synchronous HTTP client; no async loop
         self.get_logger().info(f'VLM Control started. Subscribed to {self.camera_topic}')
@@ -93,12 +93,18 @@ class VlmControl(Node):
                 self.get_logger().warning('Image encoding failed')
                 return
 
+            prompt = ""
+            # prompt += "\nSTATES HISTORY (-3 -> -2 -> -1 -> current):\n"
+            # prompt += "\n".join([f"step {i-3}:\n{txt}" for i, txt in enumerate(self.history[-3:])])
+            prompt += "\nPROMPT:\n" + self.prompt
+            # self.messages_pub.publish(String(data=f"{prompt}"))
+
             payload = {
                 'model': self.model,
                 'stream': False,
                 'messages': [{
                     'role': 'user',
-                    'content': self.prompt,
+                    'content': prompt,
                     'images': [img_b64]
                 }]
             }
@@ -110,6 +116,7 @@ class VlmControl(Node):
                     data = resp.json()
                     message = data.get('message', {}).get('content', {})
                     text = message if message else str(data)
+                    self.history.append(text)
                     self.messages_pub.publish(String(data=text))
                     # Optionally control robot if special tokens are present
                     self.control_robot(text)
@@ -142,29 +149,50 @@ class VlmControl(Node):
             self.get_logger().error(f'encode_and_optimize failed: {e}')
             return None
 
+    def parse_command(self, sentence, word_list):
+        """
+        Finds the last occurrence of any word from the given list in the sentence.
+        
+        Args:
+            sentence (str): The input sentence.
+            word_list (list): List of target words to search for.
+        
+        Returns:
+            tuple: (word, index) of the last occurring word from the list, or (None, -1) if not found.
+        """
+        line = sentence.splitlines()[-1]
+        
+        for target_word in word_list:
+            if target_word in line:
+                self.get_logger().info(f'Parse VLM answer: Found occurrence of {target_word}')
+                return target_word
+                
+        return None
+
 
     def control_robot(self, response_text: str):
         command = Twist()
         command.linear.x = 0.0
         command.angular.z = 0.0
 
-        if '<STOP>' in response_text:
-            command.linear.x = 0.0
-            self.get_logger().info('STOP signal received')        
-        if '<FORWARD>' in response_text:
-            command.linear.x = self.linear_speed_constant
-            self.get_logger().info('FORWARD signal received')
-        if '<BACK>' in response_text:
-            command.linear.x = -self.linear_speed_constant
-            self.get_logger().info('BACKWARD signal received')
-        if '<LEFT>' in response_text:
-            command.angular.z = -self.angular_speed_constant
-            command.linear.x = self.linear_speed_constant
-            self.get_logger().info('TURN_LEFT signal received')
-        if '<RIGHT>' in response_text:
-            command.angular.z = self.angular_speed_constant
-            command.linear.x = self.linear_speed_constant
-            self.get_logger().info('TURN_RIGHT signal received')
+        last_command = self.parse_command(response_text, ['<STOP>', '<FORWARD>', '<BACK>', '<LEFT>', '<RIGHT>'])
+
+        if last_command is not None:
+            if last_command == '<STOP>':
+                command.linear.x = 0.0
+                self.get_logger().info('STOP signal received')        
+            if last_command == '<FORWARD>':
+                command.linear.x = self.linear_speed_constant
+                self.get_logger().info('FORWARD signal received')
+            if last_command == '<BACK>':
+                command.linear.x = -self.linear_speed_constant
+                self.get_logger().info('BACKWARD signal received')
+            if last_command == '<LEFT>':
+                command.angular.z = -self.angular_speed_constant
+                self.get_logger().info('TURN_LEFT signal received')
+            if last_command == '<RIGHT>':
+                command.angular.z = self.angular_speed_constant
+                self.get_logger().info('TURN_RIGHT signal received')
             
         self.cmd_vel_publisher.publish(command)
 

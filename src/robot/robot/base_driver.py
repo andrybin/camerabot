@@ -6,15 +6,20 @@ from rclpy.node import Node
 
 HALF_DISTANCE_BETWEEN_WHEELS = 1.
 WHEEL_RADIUS = 1.
-DEFAULT_STEPS_WITHOUT_COMMAND_THRESHOLD = 20
+
 
 class BaseDriver(Node):
-    def __init__(self):
-        rclpy.init(args=None)
+    def __init__(self, max_steps_without_command=20):
+        # Safe init: avoid ImportError on rclpy.utilities.is_initialized (ROS Humble)
+        # and handle already-initialized context gracefully.
+        try:
+            rclpy.init(args=None)
+        except RuntimeError:
+            pass
         super().__init__(self.__class__.__name__)
         self._target_twist = Twist()
+        self.max_steps_without_command = max_steps_without_command
         self.steps_without_command = 0
-        self.steps_without_command_threshold = DEFAULT_STEPS_WITHOUT_COMMAND_THRESHOLD
         self.create_subscription(Twist, "cmd_vel", self._cmd_vel_callback, 1)
 
     def _cmd_vel_callback(self, twist):
@@ -40,7 +45,7 @@ class BaseDriver(Node):
 
         # If no command has been received for N steps, stop the robot
         self.steps_without_command += 1
-        if self.steps_without_command > self.steps_without_command_threshold:
+        if self.steps_without_command > self.max_steps_without_command:
             if self._target_twist.linear.x != 0 or self._target_twist.angular.z != 0:
                 self.get_logger().warn(f"No command received for {self.steps_without_command} steps, stopping the robot")
                 self._target_twist = Twist()
