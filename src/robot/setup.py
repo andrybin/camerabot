@@ -8,7 +8,6 @@ data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_sim
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_ugv.py']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
 data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
-data_files.append(('share/' + package_name + '/resource', ['resource/default.rviz']))
 data_files.append(('share/' + package_name + '/resource', ['resource/config.yaml']))
 data_files.append(('share/' + package_name, ['package.xml']))
 
