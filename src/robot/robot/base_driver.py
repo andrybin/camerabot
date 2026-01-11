@@ -45,7 +45,7 @@ class BaseDriver(Node):
 
         # If no command has been received for N steps, stop the robot
         self.steps_without_command += 1
-        if self.steps_without_command > self.max_steps_without_command:
+        if self.steps_without_command >= self.max_steps_without_command:
             if self._target_twist.linear.x != 0 or self._target_twist.angular.z != 0:
                 self.get_logger().warn(f"No command received for {self.steps_without_command} steps, stopping the robot")
                 self._target_twist = Twist()
