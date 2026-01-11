@@ -97,3 +97,6 @@ rqt
 # second terminal
 ros2 run robot keyboard_teleop
 ```
+
+
+ros2 topic echo /vlm/result --full-length
