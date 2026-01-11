@@ -2,29 +2,46 @@
 ![jjj](assets/real_drive_1.gif)
 
 ## Install on host-mashine
-### 1. Run container and enter
+### 1. Setup container
+If docker is not installed
+```
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+# Log out and log back in for the group changes to take effect
+# Or run: newgrp docker
+```
+Build container with ROS2
 ```
 ./host.sh
 ```
 
-### 2. Build packages (only for first time)
+Build packages (only for first time)
 ```
 colcon build
+```
+
+Source environment (every time in new terminal connected to container)
+```
 . e
 ```
 
-### 3. Simple simulation test
+### 2. Simple simulation test
 ```
 ros2 launch robot sim.py simple_control:=true vlm_control:=false
 ```
 
-### 4. Install Ollama and the vlm-model
+### 3. Install Ollama and the vlm-model
+Run outside the host container
 ```
 curl -fsSL https://ollama.com/install.sh | sh
-ollama run qwen2.5vl:3b
+```
+Optionally verify run the model
+```
+ollama run qwen2.5vl:latest
 ```
 
-### 5. Run simulation with VLM
+### 4. Run simulation with VLM
+Run inside the host container
 ```
 ros2 launch robot sim.py simple_control:=false vlm_control:=true
 ```
