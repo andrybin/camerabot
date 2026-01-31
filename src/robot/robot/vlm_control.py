@@ -32,14 +32,15 @@ class VlmControl(Node):
         # Parameters
         self.declare_parameter('camera_topic', '/camera/image_color')
         self.declare_parameter('service_url', 'http://localhost:11434/api/chat')
-        self.declare_parameter('model', 'qwen2.5vl:latest')
+        self.declare_parameter('model', 'qwen2.5vl:7b')
         self.declare_parameter('prompt', 'if you see a CUP print <GO>, if you see a red duck print <STOP>')
-        self.declare_parameter('max_width', 480)
+        self.declare_parameter('max_width', 640)
         self.declare_parameter('max_height', 480)
         self.declare_parameter('quality', 85)
         self.declare_parameter('period_s', 1.0)
         self.declare_parameter('linear_speed_constant', 0.15) #0.15 1
         self.declare_parameter('angular_speed_constant', 0.2) #0.2 0.3
+        self.declare_parameter('ollama_timeout', 300)  # seconds for ollama read (VLMs can be slow)
 
         self.camera_topic = self.get_parameter('camera_topic').get_parameter_value().string_value
         self.service_url = self.get_parameter('service_url').get_parameter_value().string_value
@@ -51,6 +52,7 @@ class VlmControl(Node):
         self.period_s = self.get_parameter('period_s').get_parameter_value().double_value
         self.linear_speed_constant = self.get_parameter('linear_speed_constant').get_parameter_value().double_value
         self.angular_speed_constant = self.get_parameter('angular_speed_constant').get_parameter_value().double_value
+        self.ollama_timeout = self.get_parameter('ollama_timeout').get_parameter_value().integer_value
 
         self.bridge = CvBridge()
         self.latest_image = None
@@ -63,8 +65,7 @@ class VlmControl(Node):
         self.create_subscription(RosImage, self.camera_topic, self.image_callback, qos)
         self.history = []
 
-        # Synchronous HTTP client; no async loop
-        self.get_logger().info(f'VLM Control started. Subscribed to {self.camera_topic}')
+        self.get_logger().info(f'VLM Control started with with {self.model} model. Subscribed to {self.camera_topic}')
 
     def image_callback(self, msg: RosImage):
         try:
@@ -110,7 +111,7 @@ class VlmControl(Node):
             }
             try:
                 self.get_logger().info(f'Sending request to {self.service_url}')
-                resp = requests.post(self.service_url, json=payload, timeout=60)
+                resp = requests.post(self.service_url, json=payload, timeout=self.ollama_timeout)
                 self.get_logger().info(f'Response from {self.service_url}: {resp.status_code}')
                 if resp.status_code == 200:
                     data = resp.json()
@@ -162,10 +163,12 @@ class VlmControl(Node):
         """
         line = sentence.splitlines()[-1]
         
+        self.get_logger().info(f'Parse VLM answer: try to find target command...')
         for target_word in word_list:
             if target_word in line:
-                self.get_logger().info(f'Parse VLM answer: Found occurrence of {target_word}')
+                self.get_logger().info(f'Found occurrence of {target_word}')
                 return target_word
+        self.get_logger().warning(f'NO command found!')
                 
         return None
 

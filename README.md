@@ -10,27 +10,41 @@ sudo usermod -aG docker $USER
 # Log out and log back in for the group changes to take effect
 # Or run: newgrp docker
 ```
-Build container with ROS2
+Use container: enter the ROS2 container (builds and starts it if needed)
 ```
 ./host.sh
 ```
 
-Build packages (only for first time)
+Build packages (only for first time). Use **symlink install** so Python changes in `src/` take effect without rebuilding:
 ```
-colcon build
+colcon build --symlink-install
+```
+(Without `--symlink-install`, you must run `colcon build` after every Python change.)
+
+Or use fast script that do all the staff:
+```
+./b
 ```
 
-Source environment (every time in new terminal connected to container)
+Source environment (every time in new terminal connected to container). Run this **in the same terminal** before any `ros2` command:
 ```
 . e
 ```
 
-### 2. Simple simulation test
+### 2. Run Webots (world only) or simulation
+All commands below are run **inside the container** (after `./host.sh`). Ensure you ran `. e` in that terminal first.
+
+Webots world only (no robot driver, no VLM):
 ```
-ros2 launch robot sim.py simple_control:=true vlm_control:=false
+ros2 launch robot webots_world.py
 ```
 
-### 3. Install Ollama and the vlm-model
+Webots simulation with teleop (keyboard: arrow keys; click terminal first):
+```
+ros2 launch robot sim_teleop.py
+```
+
+### 3. Install Ollama with vlm-model
 Run outside the host container
 ```
 curl -fsSL https://ollama.com/install.sh | sh
@@ -41,9 +55,9 @@ ollama run qwen2.5vl:latest
 ```
 
 ### 4. Run simulation with VLM
-Run inside the host container
+Inside the container (after `./host.sh`):
 ```
-ros2 launch robot sim.py simple_control:=false vlm_control:=true
+ros2 launch robot sim.py
 ```
 
 ## Installation on RaspberryPI5

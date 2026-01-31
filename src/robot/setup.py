@@ -4,8 +4,10 @@ package_name = 'robot'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
 data_files.append(('share/' + package_name + '/launch', ['launch/sim.py']))
+data_files.append(('share/' + package_name + '/launch', ['launch/sim_teleop.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_sim.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_ugv.py']))
+data_files.append(('share/' + package_name + '/launch', ['launch/webots_world.py']))
 data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
 data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
 data_files.append(('share/' + package_name + '/resource', ['resource/config.yaml']))
@@ -23,16 +25,13 @@ setup(
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
-    entry_points={
-        'console_scripts': [
-            'webots_driver = robot.webots_driver:main',
-            'vlm_control = robot.vlm_control:main',
-            'ugv_driver = robot.ugv_driver:main',
-            'talker = robot.talker:main',
-            'listener = robot.listener:main',
-            'simple_control = robot.simple_control:main',
-            'camera = robot.camera:main',
-            'keyboard_teleop = robot.keyboard_teleop:main',
-        ],
-    },
+    scripts=[
+        'scripts/webots_driver',
+        'scripts/vlm_control',
+        'scripts/ugv_driver',
+        'scripts/talker',
+        'scripts/listener',
+        'scripts/camera',
+        'scripts/keyboard_teleop',
+    ],
 )

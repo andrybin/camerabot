@@ -123,6 +123,6 @@ docker run -it \
   $image_name \
   bash -c "echo 📷 Enabling camera access for Raspberry Pi... && bash rpicam2ubuntu.sh &&\
            echo ✅  Done! Next steps: &&\
-           echo build packeges: colcon build &&\
+           echo build packages: colcon build --symlink-install &&\
            echo every time source environment: . e &&\
            bash"
