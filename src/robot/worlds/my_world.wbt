@@ -159,7 +159,7 @@ Robot {
   controller "<extern>"
 }
 Solid {
-  translation 0.0 0.1 0.04
+  translation -0.4 0.3 0.04
   rotation 0 0 1 1.5708
   children [
     Shape {

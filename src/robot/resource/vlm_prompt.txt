@@ -1,15 +1,13 @@
+You control a wheel robot.
 Available commands to robot:
-<FORWARD> 
-<RIGHT>
-<LEFT> 
-<BACK>
+<FORWARD> - slowly go forward
+<RIGHT> - turn right without moving
+<LEFT> - turn left without moving
+<BACK> - slowly go back
+<STOP> - stay
 
 Your goal:
-Using available commands to correct your direction get close to WHITE BALL as mutch as possible.
+Using available commands to correct your direction get close to WHITE BALL as mutch as possible and touch it.
 
-1. Do you see WHITE BALL on the floor?
-2. Where the WHITE BALL located: near the center of a frame, close to the left side or right side of image?
-3. Turn left if WHITE BALL is near the left side of image
-4. Turn right if WHITE BALL is near the right side of image
-5. Move back if there is no WHITE BALL in order to find it
-6. Think before give answer. What one available command to choise to achive the goal?
+- Describe in new line started with ???: Where WHITE BALL located now relative to robot? Give approximate estimation?
+- Answer in new line started with >>>: What available command to choise to achive the goal?

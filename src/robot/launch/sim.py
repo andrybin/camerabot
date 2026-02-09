@@ -13,7 +13,7 @@ from webots_ros2_driver.webots_launcher import WebotsLauncher
 
 def generate_launch_description():
     package_dir = get_package_share_directory('robot')
-    model = LaunchConfiguration('model', default='qwen2.5vl:7b')
+    model = LaunchConfiguration('model', default='qwen2.5vl:latest')
     robot_description_path = os.path.join(package_dir, 'resource', 'my_robot.urdf')
 
     webots = WebotsLauncher(
@@ -35,7 +35,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument('model', default_value='qwen2.5vl:7b', description='VLM model name (e.g. qwen2.5vl:7b)'),
+        DeclareLaunchArgument('model', default_value='qwen2.5vl:latest', description='VLM model name (e.g. qwen2.5vl:latest)'),
         webots,
         webots_driver,
         vlm_control_sim,

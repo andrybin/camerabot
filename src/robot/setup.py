@@ -25,13 +25,14 @@ setup(
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
-    scripts=[
-        'scripts/webots_driver',
-        'scripts/vlm_control',
-        'scripts/ugv_driver',
-        'scripts/talker',
-        'scripts/listener',
-        'scripts/camera',
-        'scripts/keyboard_teleop',
-    ],
+    entry_points={
+        'console_scripts': [
+            'vlm_control = robot.vlm_control:main',
+            'ugv_driver = robot.ugv_driver:main',
+            'talker = robot.talker:main',
+            'listener = robot.listener:main',
+            'camera = robot.camera:main',
+            'keyboard_teleop = robot.keyboard_teleop:main',
+        ],
+    },
 )
