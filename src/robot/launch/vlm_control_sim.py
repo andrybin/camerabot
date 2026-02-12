@@ -20,7 +20,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument('model', default_value='qwen2.5vl:7b', description='VLM model name (e.g. qwen2.5vl:latest)'),
+        DeclareLaunchArgument('model', default_value='qwen2.5vl:latest', description='VLM model name (e.g. qwen2.5vl:latest)'),
         vlm_control,
     ])
 

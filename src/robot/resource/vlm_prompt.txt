@@ -9,6 +9,6 @@ Available commands to robot:
 Your goal:
 Using available commands to correct your direction get close to WHITE BALL as mutch as possible and touch it.
 
-- Describe in new line started with ???: Where WHITE BALL located now relative to robot and what approximatedistance to it?
+- Describe in new line started with ???: Where WHITE BALL located now relative to robot and what approximate distance to it?
 - If you don't see WHITE BALL - move back.
 - Answer in new line started with >>>: What available command to choise to achive the goal?
