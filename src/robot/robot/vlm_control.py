@@ -41,8 +41,9 @@ class VlmControl(Node):
         self.declare_parameter('linear_speed_constant', 0.15)
         self.declare_parameter('angular_speed_constant', 0.2)
         self.declare_parameter('ollama_timeout', 300)
-        self.declare_parameter('add_last_command', False)
-        self.declare_parameter('add_last_scene', False)
+        self.declare_parameter('max_tokens', 256)
+        self.declare_parameter('add_last_command', True)
+        self.declare_parameter('add_last_scene', True)
 
         self.camera_topic = self.get_parameter('camera_topic').get_parameter_value().string_value
         self.service_url = self.get_parameter('service_url').get_parameter_value().string_value
@@ -54,6 +55,7 @@ class VlmControl(Node):
         self.linear_speed_constant = self.get_parameter('linear_speed_constant').get_parameter_value().double_value
         self.angular_speed_constant = self.get_parameter('angular_speed_constant').get_parameter_value().double_value
         self.ollama_timeout = self.get_parameter('ollama_timeout').get_parameter_value().integer_value
+        self.max_tokens = self.get_parameter('max_tokens').get_parameter_value().integer_value
         self.add_last_command =  self.get_parameter('add_last_command').get_parameter_value().bool_value
         self.add_last_scene = self.get_parameter('add_last_scene').get_parameter_value().bool_value
 
@@ -62,6 +64,9 @@ class VlmControl(Node):
         self.latest_image = None
         self.image_received = False
         self.processing = False
+        self.msg_count = 0
+        self.count_scale = 0.7
+        self.count_thickness = 1
         self.messages_pub = self.create_publisher(String, 'vlm/result', qos)
         self.debug_pub = self.create_publisher(String, 'vlm/debug', qos)
         self.annotated_image_pub = self.create_publisher(RosImage, 'vlm/annotated_image', qos)
@@ -111,6 +116,7 @@ class VlmControl(Node):
             chat_payload = {
                 'model': self.model,
                 'stream': False,
+                'options': {'num_predict': self.max_tokens},
                 'messages': [{
                     'role': 'user',
                     'content': prompt,
@@ -129,6 +135,7 @@ class VlmControl(Node):
                         'stream': False,
                         'prompt': prompt,
                         'images': [img_b64],
+                        'options': {'num_predict': self.max_tokens},
                     }
                     self.get_logger().warning(
                         f'{self.service_url} returned 404, falling back to {generate_url}'
@@ -151,6 +158,7 @@ class VlmControl(Node):
                     self.history.append(
                         {"last_command": command_parsed[1:-1].lower(), "last_scene": scene_parsed})
 
+                    self.msg_count += 1
                     annotated = self.annotate_image_with_text(response_text, command_parsed)
                     if annotated is not None:
                         annotated_msg = self.bridge.cv2_to_imgmsg(annotated, encoding='bgr8')
@@ -234,6 +242,7 @@ class VlmControl(Node):
             cv_image = np.zeros((100, 720, 3), dtype=np.uint8)
             img_h, img_w = cv_image.shape[:2]
             img_with_cmd = cv_image.copy()
+            font = cv2.FONT_HERSHEY_SIMPLEX
 
             if command_txt:
                 center_x = img_w // 2
@@ -295,12 +304,29 @@ class VlmControl(Node):
                             cv2.LINE_AA,
                             tipLength=arrow_tip,
                         )
+
+            count_text = f"cmd #{self.msg_count}"
+            count_margin = max(6, int(img_w * 0.02))
+            (count_w, count_h), count_base = cv2.getTextSize(
+                count_text, font, self.count_scale, self.count_thickness
+            )
+            count_y = min(img_h - 1, count_margin + count_h)
+            count_x = min(img_w - 1, count_margin)
+            cv2.putText(
+                img_with_cmd,
+                count_text,
+                (count_x, count_y),
+                font,
+                self.count_scale,
+                (255, 255, 255),
+                self.count_thickness,
+                cv2.LINE_AA,
+            )
             panel_h = img_h*4
             panel = np.zeros((panel_h, img_w, 3), dtype=np.uint8)
 
             margin = max(10, int(img_w * 0.02))
             max_text_width = img_w - 2 * margin
-            font = cv2.FONT_HERSHEY_SIMPLEX
             thickness = 1
             min_scale = 0.2
             max_scale = 1.5
