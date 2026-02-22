@@ -42,8 +42,8 @@ class VlmControl(Node):
         self.declare_parameter('angular_speed_constant', 0.2)
         self.declare_parameter('ollama_timeout', 300)
         self.declare_parameter('max_tokens', 256)
-        self.declare_parameter('add_last_command', True)
-        self.declare_parameter('add_last_scene', True)
+        self.declare_parameter('add_last_command', False)
+        self.declare_parameter('add_last_scene', False)
 
         self.camera_topic = self.get_parameter('camera_topic').get_parameter_value().string_value
         self.service_url = self.get_parameter('service_url').get_parameter_value().string_value
