@@ -69,15 +69,17 @@ class KeyboardTeleopNode(Node):
 
         self.get_logger().info('Keyboard teleop started. Use arrow keys to move, space to stop.')
 
-    def _clamp_speed(self):
-        """Clamp linear and angular speeds to maximum allowed value."""
-        if abs(self.current_twist.linear.x) >= self.max_speed:
+    def _increment_linear_speed(self, speed):
+        self.current_twist.linear.x += speed
+        if abs(self.current_twist.linear.x) > self.max_speed:
             self.current_twist.linear.x = self.max_speed if self.current_twist.linear.x > 0 else -self.max_speed
-        if abs(self.current_twist.angular.z) >= self.max_speed:
+
+    def _increment_angular_speed(self, speed):
+        self.current_twist.angular.z += speed
+        if abs(self.current_twist.angular.z) > self.max_speed:
             self.current_twist.angular.z = self.max_speed if self.current_twist.angular.z > 0 else -self.max_speed
 
     def _publish_current_command(self):
-        self._clamp_speed()
         self.cmd_vel_publisher.publish(self.current_twist)
 
     def _keyboard_loop(self):
@@ -139,7 +141,7 @@ class KeyboardTeleopNode(Node):
     def _move_forward(self):
         if self.current_twist.linear.x > 0:
             # 🚀 Increment speed if already moving forward
-            self.current_twist.linear.x += self.linear_speed
+            self._increment_linear_speed(self.linear_speed)
         else:
             # 🚗 Set speed to default if not moving forward
             self.current_twist.linear.x = self.linear_speed
@@ -149,7 +151,7 @@ class KeyboardTeleopNode(Node):
     def _move_backward(self):
         if self.current_twist.linear.x < 0:
             # 🚀 Increment speed if already moving backward
-            self.current_twist.linear.x -= self.linear_speed
+            self._increment_linear_speed(-self.linear_speed)
         else:
             # 🚗 Set speed to default if not moving backward
             self.current_twist.linear.x = -self.linear_speed
@@ -160,7 +162,7 @@ class KeyboardTeleopNode(Node):
         self.current_twist.linear.x = 0.0
         if self.current_twist.angular.z < 0:
             # 🚀 Increment speed if already rotating counterclockwise
-            self.current_twist.angular.z -= self.angular_speed
+            self._increment_angular_speed(-self.angular_speed)
         else:
             # 🚗 Set speed to default if not rotating counterclockwise
             self.current_twist.angular.z = -self.angular_speed
@@ -170,7 +172,7 @@ class KeyboardTeleopNode(Node):
         self.current_twist.linear.x = 0.0
         if self.current_twist.angular.z > 0:
             # 🚀 Increment speed if already rotating clockwise
-            self.current_twist.angular.z += self.angular_speed
+            self._increment_angular_speed(self.angular_speed)
         else:
             # 🚗 Set speed to default if not rotating clockwise
             self.current_twist.angular.z = self.angular_speed
