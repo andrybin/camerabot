@@ -9,7 +9,7 @@ WHEEL_RADIUS = 1.
 
 
 class BaseDriver(Node):
-    def __init__(self, max_steps_without_command=20):
+    def __init__(self, max_steps_without_command: int):
         # Safe init: avoid ImportError on rclpy.utilities.is_initialized (ROS Humble)
         # and handle already-initialized context gracefully.
         try:

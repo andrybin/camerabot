@@ -71,9 +71,9 @@ class KeyboardTeleopNode(Node):
 
     def _clamp_speed(self):
         """Clamp linear and angular speeds to maximum allowed value."""
-        if abs(self.current_twist.linear.x) > self.max_speed:
+        if abs(self.current_twist.linear.x) >= self.max_speed:
             self.current_twist.linear.x = self.max_speed if self.current_twist.linear.x > 0 else -self.max_speed
-        if abs(self.current_twist.angular.z) > self.max_speed:
+        if abs(self.current_twist.angular.z) >= self.max_speed:
             self.current_twist.angular.z = self.max_speed if self.current_twist.angular.z > 0 else -self.max_speed
 
     def _publish_current_command(self):
