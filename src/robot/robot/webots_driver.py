@@ -2,6 +2,11 @@ from .base_driver import BaseDriver
 
 
 class WebotsDriver(BaseDriver):
+    def __init__(self, max_steps_without_command: int = 50):
+        # The Webots ROS 2 driver instantiates plugins with no constructor args.
+        # Keep constructor arg-free (with defaults) and do ROS init here.
+        super().__init__(max_steps_without_command)
+
     def init(self, robot_node, properties, max_steps_without_command=60):
         
         self.__robot = robot_node.robot
