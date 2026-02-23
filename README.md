@@ -57,7 +57,7 @@ ollama run qwen2.5vl:latest
 ### 4. Run simulation with VLM
 Inside the container (after `./host.sh`):
 ```
-ros2 launch robot sim.py
+ros2 launch robot vlm_control_sim.py
 ```
 
 ## Installation on RaspberryPI5

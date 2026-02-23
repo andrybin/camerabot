@@ -3,7 +3,6 @@ from setuptools import setup
 package_name = 'robot'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
-data_files.append(('share/' + package_name + '/launch', ['launch/sim.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/sim_teleop.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_sim.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_ugv.py']))
