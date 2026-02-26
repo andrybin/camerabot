@@ -1,5 +1,5 @@
 # CAMERABOT
-![jjj](assets/real_drive_1.gif)
+![real_drive_2](assets/real_drive_2.gif)
 
 ## Install on host-mashine
 ### 1. Setup container
@@ -15,20 +15,9 @@ Use container: enter the ROS2 container (builds and starts it if needed)
 ./host.sh
 ```
 
-Build packages (only for first time). Use **symlink install** so Python changes in `src/` take effect without rebuilding:
+Build packages (only for first time), source env:
 ```
-colcon build --symlink-install
-```
-(Without `--symlink-install`, you must run `colcon build` after every Python change.)
-
-Or use fast script that do all the staff:
-```
-./b
-```
-
-Source environment (every time in new terminal connected to container). Run this **in the same terminal** before any `ros2` command:
-```
-. e
+./b && . e
 ```
 
 ### 2. Run Webots (world only) or simulation
@@ -101,33 +90,18 @@ sudo raspi-config
 
 ## Set up both
 ### 1. Test communication between robot and host
-On robot:
-```
-ros2 run robot talker
-```
-On host:
-```
-ros2 run robot listener
-```
+- on host: `ros2 run robot listener`
+- on robot: `ros2 run robot talker`
 
 ### 2. Test camera streem and control
-On robot:
-```
-# first terminal
-ros2 run robot camera
+Control robot with kyoard:
+- on host: `ros2 launch robot robot_teleop.py`
+- on robot: `ros2 launch robot sensing_control.py`
 
-# second terminal
-ros2 run robot ugv_contol
-```
+### 3. Run real drive
 
-On host:
-```
-# first terminal to show image
-rqt
+Run both host and robot:
+- on host: `ros2 launch robot vlm_control_ugv.py`
+- on robot: `ros2 launch robot sensing_control.py`
 
-# second terminal
-ros2 run robot keyboard_teleop
-```
-
-
-ros2 topic echo /vlm/result --full-length
+![real_drive_1](assets/real_drive_2.gif)
