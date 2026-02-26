@@ -104,4 +104,4 @@ Run both host and robot:
 - on host: `ros2 launch robot vlm_control_ugv.py`
 - on robot: `ros2 launch robot sensing_control.py`
 
-![real_drive_1](assets/real_drive_2.gif)
+![real_drive_1](assets/real_drive_1.gif)
