@@ -111,4 +111,4 @@ Run both host and robot:
 - RaspberryPi 5
 - [Compatible wide angle camera](https://www.waveshare.com/ov9281-160-camera.htm)
 - [Conection like this](https://www.waveshare.com/raspberry-pi-5-official-camera-cable-200mm.htm?srsltid=AfmBOooO6gJmVluyBcQhvPlaxyJbKxvSUXSYUYTL6RkulsGNizACw21_)
-- [Active Cooler]([https://ozon.ru/t/NIfLVYG](https://geekworm.com/products/raspberry-pi-5-active-cooler?srsltid=AfmBOor6APnJow_TqDsZzyN72cK3yyzeO3LTQtW_xcKoo4sBvNULtC6n)
+- [Active Cooler](https://geekworm.com/products/raspberry-pi-5-active-cooler?srsltid=AfmBOor6APnJow_TqDsZzyN72cK3yyzeO3LTQtW_xcKoo4sBvNULtC6n)
