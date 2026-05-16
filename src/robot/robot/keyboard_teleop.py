@@ -18,14 +18,12 @@ class KeyboardTeleopNode(Node):
         # Parameters for movement speeds
         self.declare_parameter('linear_speed', 0.1)
         self.declare_parameter('angular_speed', 0.1)
+        self.declare_parameter('max_speed', 0.5)
         self.linear_speed = float(self.get_parameter('linear_speed').value)
         self.angular_speed = float(self.get_parameter('angular_speed').value)
-
+        self.max_speed = float(self.get_parameter('max_speed').value)
         self.command_changed = False
         
-        # Maximum allowed speed
-        self.max_speed = 0.5
-
         # Publisher for cmd_vel
         self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 1)
 
@@ -158,13 +156,11 @@ class KeyboardTeleopNode(Node):
         self.get_logger().info(f'🔴 Move backward: {self.current_twist.linear.x:.2f}')
 
     def _rotate_counterclockwise(self):
-        # self.current_twist.linear.x = 0.0
         # 🚀 Increment speed if already rotating counterclockwise
         self._increment_angular_speed(self.angular_speed)
         self.get_logger().info(f'🔄 Rotate counterclockwise: {self.current_twist.angular.z:.2f}')
 
     def _rotate_clockwise(self):
-        # self.current_twist.linear.x = 0.0
         # 🚀 Increment speed if already rotating clockwise
         self._increment_angular_speed(-self.angular_speed)
         self.get_logger().info(f'🔁 Rotate clockwise: {self.current_twist.angular.z:.2f}')

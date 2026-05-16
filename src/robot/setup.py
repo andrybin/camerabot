@@ -10,7 +10,9 @@ data_files.append(('share/' + package_name + '/launch', ['launch/webots_world.py
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_monitor.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/robot_teleop.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/sensing_control.py']))
-data_files.append(('share/' + package_name + '/worlds', ['worlds/my_world.wbt']))
+data_files.append(
+    ('share/' + package_name + '/worlds', ['worlds/my_world.wbt', 'worlds/track.wbt'])
+)
 data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
 data_files.append(('share/' + package_name + '/resource', ['resource/config.yaml']))
 data_files.append(('share/' + package_name + '/resource', ['resource/vlm_monitor.perspective']))
