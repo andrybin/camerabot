@@ -20,6 +20,8 @@ class KeyboardTeleopNode(Node):
         self.declare_parameter('angular_speed', 0.1)
         self.linear_speed = float(self.get_parameter('linear_speed').value)
         self.angular_speed = float(self.get_parameter('angular_speed').value)
+
+        self.command_changed = False
         
         # Maximum allowed speed
         self.max_speed = 0.5
@@ -73,14 +75,19 @@ class KeyboardTeleopNode(Node):
         self.current_twist.linear.x += speed
         if abs(self.current_twist.linear.x) > self.max_speed:
             self.current_twist.linear.x = self.max_speed if self.current_twist.linear.x > 0 else -self.max_speed
+        self.command_changed = True
 
     def _increment_angular_speed(self, speed):
         self.current_twist.angular.z += speed
         if abs(self.current_twist.angular.z) > self.max_speed:
             self.current_twist.angular.z = self.max_speed if self.current_twist.angular.z > 0 else -self.max_speed
+        self.command_changed = True
 
     def _publish_current_command(self):
         self.cmd_vel_publisher.publish(self.current_twist)
+        if self.command_changed:
+            self.get_logger().info(f'Published cmd_vel: linear.x={self.current_twist.linear.x:.2f}, angular.z={self.current_twist.angular.z:.2f}')
+            self.command_changed = False
 
     def _keyboard_loop(self):
         if self._tty_file is None or self._tty_fd is None:
@@ -139,43 +146,27 @@ class KeyboardTeleopNode(Node):
             self._rotate_clockwise()
 
     def _move_forward(self):
-        if self.current_twist.linear.x > 0:
-            # 🚀 Increment speed if already moving forward
-            self._increment_linear_speed(self.linear_speed)
-        else:
-            # 🚗 Set speed to default if not moving forward
-            self.current_twist.linear.x = self.linear_speed
+        # 🚀 Increment speed if already moving forward
+        self._increment_linear_speed(self.linear_speed)
         self.current_twist.angular.z = 0.0
         self.get_logger().info(f'🟢 Move forward: {self.current_twist.linear.x:.2f}')
 
     def _move_backward(self):
-        if self.current_twist.linear.x < 0:
-            # 🚀 Increment speed if already moving backward
-            self._increment_linear_speed(-self.linear_speed)
-        else:
-            # 🚗 Set speed to default if not moving backward
-            self.current_twist.linear.x = -self.linear_speed
+        # 🚀 Increment speed if already moving backward
+        self._increment_linear_speed(-self.linear_speed)
         self.current_twist.angular.z = 0.0
         self.get_logger().info(f'🔴 Move backward: {self.current_twist.linear.x:.2f}')
 
     def _rotate_counterclockwise(self):
-        self.current_twist.linear.x = 0.0
-        if self.current_twist.angular.z < 0:
-            # 🚀 Increment speed if already rotating counterclockwise
-            self._increment_angular_speed(-self.angular_speed)
-        else:
-            # 🚗 Set speed to default if not rotating counterclockwise
-            self.current_twist.angular.z = -self.angular_speed
+        # self.current_twist.linear.x = 0.0
+        # 🚀 Increment speed if already rotating counterclockwise
+        self._increment_angular_speed(self.angular_speed)
         self.get_logger().info(f'🔄 Rotate counterclockwise: {self.current_twist.angular.z:.2f}')
 
     def _rotate_clockwise(self):
-        self.current_twist.linear.x = 0.0
-        if self.current_twist.angular.z > 0:
-            # 🚀 Increment speed if already rotating clockwise
-            self._increment_angular_speed(self.angular_speed)
-        else:
-            # 🚗 Set speed to default if not rotating clockwise
-            self.current_twist.angular.z = self.angular_speed
+        # self.current_twist.linear.x = 0.0
+        # 🚀 Increment speed if already rotating clockwise
+        self._increment_angular_speed(-self.angular_speed)
         self.get_logger().info(f'🔁 Rotate clockwise: {self.current_twist.angular.z:.2f}')
 
     def _stop_robot(self):

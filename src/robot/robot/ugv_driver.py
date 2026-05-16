@@ -11,6 +11,7 @@ import yaml
 from ament_index_python.packages import get_package_share_directory
 
 from .base_driver import BaseDriver
+from .base_driver import log_command_if_changed
 
 # UART device and baud rate
 UART_DEV = "UGV_UART"
@@ -173,6 +174,7 @@ class UGVDriver(BaseDriver):
         # Hardware controller
         self._hardware_controller = BaseController(uart_dev, baud_rate)
 
+    @log_command_if_changed
     def velocity_to_motors(self, command_motor_left, command_motor_right):
         self._hardware_controller.base_speed_ctrl(command_motor_left, command_motor_right)
 

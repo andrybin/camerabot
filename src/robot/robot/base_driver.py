@@ -7,6 +7,15 @@ from rclpy.node import Node
 HALF_DISTANCE_BETWEEN_WHEELS = 1.
 WHEEL_RADIUS = 1.
 
+def log_command_if_changed(func):
+    def wrapper(self, command_motor_left, command_motor_right):
+        result = func(self, command_motor_left, command_motor_right)
+        if self.command_changed:
+            self.get_logger().info(f"Send commands: motor_left={command_motor_left}, motor_right={command_motor_right}")
+            self.command_changed = False
+        return result
+    return wrapper
+
 
 class BaseDriver(Node):
     def __init__(self, max_steps_without_command: int):
@@ -21,8 +30,11 @@ class BaseDriver(Node):
         self.max_steps_without_command = max_steps_without_command
         self.steps_without_command = 0
         self.create_subscription(Twist, "cmd_vel", self._cmd_vel_callback, 1)
+        self.command_changed = False
 
     def _cmd_vel_callback(self, twist):
+        if twist != self._target_twist:
+            self.command_changed = True
         self._target_twist = twist
         self.steps_without_command = 0
 
