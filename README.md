@@ -48,6 +48,10 @@ Inside the container (after `./host.sh`):
 ```
 ros2 launch robot vlm_control_sim.py
 ```
+## Install RaspberryPI OS
+[Raspberry Pi OS (Bookworm tested)](https://www.raspberrypi.com/software/operating-systems/)
+
+[Bookworm is also available here](https://disk.yandex.ru/d/wgu7vjcfcwhprQ)
 
 ## Installation on RaspberryPI5
 ### 1. Setup Docker
