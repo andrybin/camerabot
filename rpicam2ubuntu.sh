@@ -26,6 +26,7 @@ main() {
     git meson ninja-build pkg-config build-essential python3-dev python3-pybind11 \
     libglib2.0-dev libgnutls28-dev openssl libdrm-dev libjpeg-dev libtiff5-dev \
     libexif-dev libevent-dev libexpat1-dev libunwind-dev libudev-dev libyaml-dev \
+    libfmt-dev \
     python3-yaml python3-jinja2 python3-ply \
     python3-pip libcap-dev python3-prctl
 
@@ -43,12 +44,24 @@ main() {
   ninja -C build install
 
   echo "[5/7] Building and installing kmsxx with pykms (user prefix)";
+  # Upstream dropped libfmt for std::format (needs GCC 13+ libstdc++). Ubuntu 22.04
+  # ships GCC 11; pin the last libfmt-based revision unless overridden.
+  KMSXX_REF="${KMSXX_REF:-a31ddfd9c4e294f29b9203463022d0eac11cecc5}"
   cd "$HOME"
   if [ ! -d kmsxx ]; then
     git clone --depth=1 https://github.com/tomba/kmsxx.git
   fi
   cd kmsxx
-  meson setup build --buildtype=release -Dpykms=enabled --prefix="$HOME/.local"
+  if ! git cat-file -e "${KMSXX_REF}^{commit}" 2>/dev/null; then
+    git fetch --depth=120 origin "$KMSXX_REF" 2>/dev/null || git fetch origin "$KMSXX_REF" 2>/dev/null || git fetch origin
+  fi
+  git checkout "$KMSXX_REF"
+  kmsxx_meson=(meson setup build --buildtype=release -Dpykms=enabled --prefix="$HOME/.local")
+  if [ -d build ]; then
+    "${kmsxx_meson[@]}" --reconfigure
+  else
+    "${kmsxx_meson[@]}"
+  fi
   ninja -C build -j"$(nproc)"
   ninja -C build install
 
