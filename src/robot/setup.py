@@ -3,7 +3,12 @@ from setuptools import setup
 package_name = 'robot'
 data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
-data_files.append(('share/' + package_name + '/launch', ['launch/sim_teleop.py']))
+data_files.append(
+    (
+        'share/' + package_name + '/launch',
+        ['launch/sim_teleop.py', 'launch/behaviour_recorder.launch.py'],
+    )
+)
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_sim.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_ugv.py']))
 data_files.append(('share/' + package_name + '/launch', ['launch/webots_world.py']))
@@ -38,6 +43,7 @@ setup(
             'listener = robot.listener:main',
             'camera = robot.camera:main',
             'keyboard_teleop = robot.keyboard_teleop:main',
+            'behaviour_recorder = robot.behaviour_recorder:main',
         ],
     },
 )
