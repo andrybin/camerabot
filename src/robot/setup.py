@@ -1,34 +1,50 @@
 from setuptools import setup
 
 package_name = 'robot'
-data_files = []
-data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
-data_files.append(
-    (
-        'share/' + package_name + '/launch',
-        ['launch/sim_teleop.py', 'launch/behaviour_recorder.launch.py'],
-    )
-)
-data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_sim.py']))
-data_files.append(('share/' + package_name + '/launch', ['launch/vlm_control_ugv.py']))
-data_files.append(('share/' + package_name + '/launch', ['launch/webots_world.py']))
-data_files.append(('share/' + package_name + '/launch', ['launch/vlm_monitor.py']))
-data_files.append(('share/' + package_name + '/launch', ['launch/robot_teleop.py']))
-data_files.append(('share/' + package_name + '/launch', ['launch/sensing_control.py']))
-data_files.append(
-    ('share/' + package_name + '/worlds', ['worlds/my_world.wbt', 'worlds/track.wbt'])
-)
-data_files.append(('share/' + package_name + '/resource', ['resource/my_robot.urdf']))
-data_files.append(('share/' + package_name + '/resource', ['resource/config.yaml']))
-data_files.append(('share/' + package_name + '/resource', ['resource/vlm_monitor.perspective']))
-data_files.append(('share/' + package_name, ['package.xml']))
+_share = f'share/{package_name}'
+
+_LAUNCH = [
+    'launch/behaviour_recorder.py',
+    'launch/robot_teleop.py',
+    'launch/sensing_control.py',
+    'launch/sim_behavmodel.py',
+    'launch/sim_teleop.py',
+    'launch/vlm_control_sim.py',
+    'launch/vlm_control_ugv.py',
+    'launch/vlm_monitor.py',
+    'launch/webots_world.py',
+]
+_WORLDS = ['worlds/my_world.wbt', 'worlds/track.wbt']
+_RESOURCE = [
+    'resource/my_robot.urdf',
+    'resource/config.yaml',
+    'resource/vlm_monitor.perspective',
+]
+
+data_files = [
+    ('share/ament_index/resource_index/packages', [f'resource/{package_name}']),
+    (f'{_share}/launch', _LAUNCH),
+    (f'{_share}/worlds', _WORLDS),
+    (f'{_share}/resource', _RESOURCE),
+    (_share, ['package.xml']),
+]
 
 setup(
     name=package_name,
     version='0.0.0',
     packages=[package_name],
     data_files=data_files,
-    install_requires=['setuptools', 'opencv-python', 'aiohttp', 'Pillow', 'pyserial', 'numpy', 'requests'],
+    install_requires=[
+        'setuptools',
+        'opencv-python',
+        'aiohttp',
+        'Pillow',
+        'pyserial',
+        'numpy',
+        'requests',
+        'onnx',
+        'onnxruntime',
+    ],
     zip_safe=True,
     maintainer='user',
     maintainer_email='user.name@mail.com',
@@ -44,6 +60,7 @@ setup(
             'camera = robot.camera:main',
             'keyboard_teleop = robot.keyboard_teleop:main',
             'behaviour_recorder = robot.behaviour_recorder:main',
+            'behaviour_control = robot.behaviour_control:main',
         ],
     },
 )

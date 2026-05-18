@@ -17,6 +17,13 @@
             <ros>
                 <topicName>/camera</topicName>
                 <alwaysOn>true</alwaysOn>
+                <updateRate>10</updateRate>
+            </ros>
+        </device>
+        <device reference="camera" type="Camera">
+            <ros>
+                <topicName>/camera</topicName>
+                <alwaysOn>true</alwaysOn>
             </ros>
         </device>
         <plugin type="robot.webots_driver.WebotsDriver" />
