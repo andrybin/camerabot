@@ -7,6 +7,25 @@ image_name=$3
 webots=${4:-false}  # Default to false (GUI mode)
 x11=${5:-false}  # Default to false (GUI mode)
 
+export USER_UID=$(id -u)
+export USER_GID=$(id -g)
+export USERNAME=$USER
+export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+
+# GNOME/Wayland often sets XAUTHORITY to /run/user/$UID/.mutter-Xwaylandauth.* which changes
+# between logins; bind-mounting that path into the container breaks later `docker start`.
+STABLE_XAUTH="/tmp/camerabot-docker-${USER_UID}.xauth"
+XAUTH_IN_CONTAINER="/tmp/camerabot-xauthority"
+
+sync_xauthority_copy() {
+  local xauth_path=${XAUTHORITY:-$HOME/.Xauthority}
+  if [ ! -f "$xauth_path" ]; then
+    return 0
+  fi
+  cp -f -- "$xauth_path" "$STABLE_XAUTH"
+  chmod 600 "$STABLE_XAUTH"
+}
+
 # If container exists, exec into it (start if needed)
 container_status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || true)
 if [ "${container_status:-}" = "running" ]; then
@@ -14,7 +33,17 @@ if [ "${container_status:-}" = "running" ]; then
   exec docker exec -it "$container_name" bash
 elif [ "${container_status:-}" = "exited" ] || [ "${container_status:-}" = "created" ] || [ "${container_status:-}" = "paused" ]; then
   echo "📦 Container '$container_name' exists but is not running. Starting and executing shell..."
-  docker start "$container_name" >/dev/null
+  if [ "$x11" = "true" ]; then
+    sync_xauthority_copy || true
+  fi
+  if ! docker start "$container_name"; then
+    echo ""
+    echo "❌ docker start failed. If mounts mention .mutter-Xwaylandauth or /run/user/, recreate:"
+    echo "   docker rm -f \"$container_name\""
+    echo "   Then run this script again (X11 cookie is copied to $STABLE_XAUTH for a stable bind mount)."
+    echo ""
+    exit 1
+  fi
   exec docker exec -it "$container_name" bash
 fi
 
@@ -22,12 +51,6 @@ fi
 echo "🛑 Stopping existing container..."
 docker stop $container_name 2>/dev/null || true
 docker rm $container_name 2>/dev/null || true
-
-#  2. Set environment variables 
-export USER_UID=$(id -u)
-export USER_GID=$(id -g)
-export USERNAME=$USER
-export ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
 
 # Resolve host group IDs for common device groups so the in-container user
 # gets proper access to /dev entries when /dev is bind-mounted.
@@ -72,14 +95,12 @@ if [ "$x11" == "true" ]; then
   echo "🖥️ Setting up X11 forwarding for GUI mode..."
   xhost +local:docker
   
-  # Get XAUTHORITY path (set by SSH -X)
   XAUTH_PATH=${XAUTHORITY:-$HOME/.Xauthority}
-  
-  # Ensure XAUTHORITY file exists and is readable
   if [ -f "$XAUTH_PATH" ]; then
-    echo "🔐 Found XAUTHORITY at $XAUTH_PATH"
-    XAUTH_VOLUME="--volume $XAUTH_PATH:$XAUTH_PATH:ro"
-    XAUTH_ENV="--env XAUTHORITY=$XAUTH_PATH"
+    echo "🔐 XAUTHORITY from $XAUTH_PATH → bind mount $STABLE_XAUTH (stable path for Docker)"
+    sync_xauthority_copy
+    XAUTH_VOLUME="--volume $STABLE_XAUTH:$XAUTH_IN_CONTAINER:ro"
+    XAUTH_ENV="--env XAUTHORITY=$XAUTH_IN_CONTAINER"
   else
     echo "⚠️  XAUTHORITY not found, X11 may not work properly"
     XAUTH_VOLUME=""
