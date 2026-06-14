@@ -116,3 +116,19 @@ Run both host and robot:
 - [Compatible wide angle camera](https://www.waveshare.com/ov9281-160-camera.htm)
 - [Conection like this](https://www.waveshare.com/raspberry-pi-5-official-camera-cable-200mm.htm?srsltid=AfmBOooO6gJmVluyBcQhvPlaxyJbKxvSUXSYUYTL6RkulsGNizACw21_)
 - [Active Cooler](https://geekworm.com/products/raspberry-pi-5-active-cooler?srsltid=AfmBOor6APnJow_TqDsZzyN72cK3yyzeO3LTQtW_xcKoo4sBvNULtC6n)
+
+
+
+
+
+
+```
+ros2 launch robot sim_teleop.py world:=track.wbt linear_speed:=0.15 angular_speed:=0.2 max_speed:=2.
+ros2 launch robot behaviour_recorder.py max_lin_speed:=0.15 max_ang_speed:=0.2
+```
+
+
+```
+ros2 launch robot sim_behavmodel.py world:=track.wbt weights_path:=behavclon/model.pt 
+python3 -m behavclon.scripts.train --cfg behavclon/configs/behaviour_clone.yaml data_dir=rec
+```

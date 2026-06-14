@@ -1,0 +1,83 @@
+data_dir: behavclon/dataset
+img_size: [128, 64]
+val_frac: 0.1
+seed: 0
+source_dir: behaviour_records
+work_dir: behavclon/work_dirs
+
+image_serializer:
+  type: mlengine.dataset.serializers.ImageFileSerializer
+  image_dir: ${data_dir}/images
+  image_format: JPEG
+  mode: RGB
+
+converter:
+  type: behavclon.converter.BehaviourRecorderConverter
+  source_dir: ${source_dir}
+  output_dir: ${data_dir}
+  markup_filename: markup.json
+  image_serializer: ${image_serializer}
+  target_label: control
+
+train_dataset:
+  type: behavclon.loader.BehaviourCloneDataset
+  data_dir: ${data_dir}
+  img_size: ${img_size}
+  split: train
+  val_frac: ${val_frac}
+  seed: ${seed}
+  markup_filename: markup.json
+  image_serializer: ${image_serializer}
+  augmentations:
+    type: behavclon.augmentation.ImageAugmentations
+    flip_h: 0.5
+
+val_dataset:
+  type: behavclon.loader.BehaviourCloneDataset
+  data_dir: ${data_dir}
+  img_size: ${img_size}
+  split: val
+  val_frac: ${val_frac}
+  seed: ${seed}
+  markup_filename: markup.json
+  image_serializer: ${image_serializer}
+  augmentations: null
+
+model:
+  type: behavclon.model.BehaviourCloneModel
+  img_size: ${img_size}
+  frozen_bacbone: true
+  init_ckpt: null
+
+train_pipeline:
+  type: mlengine.training.TrainValPipeline
+  device: auto
+  epochs: 200
+  val_interval: 1
+  batch_size: 32
+  shuffle: true
+  num_workers: 0
+  amp: false
+  output_dir: ${work_dir}
+  metrics:
+    f1:
+      type: mlengine.training.metrics.MulticlassF1
+  train_dataset: ${train_dataset}
+  val_dataset: ${val_dataset}
+  model: ${model}
+  optimizer:
+    type: mlengine.training.optimizers.AdamWOptimizer
+    lr: 1.0e-5
+    weight_decay: 1.0e-2
+  loss:
+    type: mlengine.training.losses.Loss
+    loss_names: [mse]
+    loss_weights: [1.0]
+  weights_regularization:
+    type: mlengine.training.losses.WeightsRegularization
+    regularization_names: [l2_norm]
+    regularization_weights: [1.0e-4]
+  monitor:
+    type: mlengine.training.monitoring.TensorBoardMonitor
+    logdir: ${work_dir}/tensorboard
+    output_dir: ${work_dir}

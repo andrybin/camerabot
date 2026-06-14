@@ -1,0 +1,14 @@
+torch
+torchvision
+tensorboard
+setuptools<82  # tensorboard 2.x still needs pkg_resources (removed in setuptools 82+)
+Pillow
+onnx
+omegaconf
+tqdm
+matplotlib
+pandas
+loguru
+scipy
+shapely
+opencv-python-headless

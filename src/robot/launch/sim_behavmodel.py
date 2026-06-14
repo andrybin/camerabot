@@ -93,7 +93,7 @@ def generate_launch_description():
                 'weights_path',
                 default_value='',
                 description=(
-                    'Path to behaviour clone ONNX model (export with behavclon/export.py). Required.'
+                    'Path to behaviour clone ONNX model (export with behavclon.scripts.export). Required.'
                 ),
             ),
             DeclareLaunchArgument(

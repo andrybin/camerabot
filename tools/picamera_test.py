@@ -3,6 +3,7 @@ import time
 import cv2
 from picamera2 import Picamera2
 
+
 # Use Picamera2 to capture frames and display with OpenCV
 picam2 = Picamera2()
 config = picam2.create_preview_configuration(main={"size": (640, 480), "format": "XRGB8888"})

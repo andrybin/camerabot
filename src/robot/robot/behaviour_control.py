@@ -57,7 +57,7 @@ def _build_stacked_chw(
     num_past: int,
     cur_chw: np.ndarray,
 ) -> np.ndarray:
-    """Match behavclon/train.py stacking: past entries are (3,H,W), cur_chw current frame."""
+    """Match behavclon frame stacking: past entries are (3,H,W), cur_chw current frame."""
     tail = past_chw[-num_past:] if past_chw else []
     out = list(tail)
     while len(out) < num_past:
@@ -105,7 +105,7 @@ class BehaviourControlNode(Node):
         if not weights_path:
             raise RuntimeError(
                 'Parameter weights_path must point to an ONNX file '
-                '(export with: python -m behavclon.export --ckpt <weights.pt>).'
+                '(export with: python -m behavclon.scripts.export --ckpt <weights.pt>).'
             )
         if not weights_path.lower().endswith('.onnx'):
             raise RuntimeError(
