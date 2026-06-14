@@ -24,13 +24,8 @@ class KeyboardTeleopNode(Node):
         self.max_speed = float(self.get_parameter('max_speed').value)
         self.command_changed = False
         
-        # Publisher for cmd_vel
         self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 1)
-
-        # Current command to publish continuously
         self.current_twist = Twist()
-
-        # Publish at a steady rate so the robot continues moving until changed
         self.publish_timer = self.create_timer(0.1, self._publish_current_command)
 
         # Prepare TTY for key input

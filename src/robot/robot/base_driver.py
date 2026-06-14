@@ -18,7 +18,7 @@ def log_command_if_changed(func):
 
 
 class BaseDriver(Node):
-    def __init__(self, max_steps_without_command: int):
+    def __init__(self, max_steps_without_command: int, cmd_vel_topic: str = 'cmd_vel'):
         # Safe init: avoid ImportError on rclpy.utilities.is_initialized (ROS Humble)
         # and handle already-initialized context gracefully.
         try:
@@ -29,8 +29,9 @@ class BaseDriver(Node):
         self._target_twist = Twist()
         self.max_steps_without_command = max_steps_without_command
         self.steps_without_command = 0
-        self.create_subscription(Twist, "cmd_vel", self._cmd_vel_callback, 1)
+        self.create_subscription(Twist, cmd_vel_topic, self._cmd_vel_callback, 1)
         self.command_changed = False
+        self.get_logger().info(f'Listening on {cmd_vel_topic!r}')
 
     def _cmd_vel_callback(self, twist):
         if twist != self._target_twist:

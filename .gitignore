@@ -3,6 +3,6 @@
 /log
 /behaviour_records
 /behavclon/dataset
-/work_dirs
+/behavclon/work_dirs
 *.pyc
 .venv*
