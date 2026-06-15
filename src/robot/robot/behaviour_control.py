@@ -23,9 +23,9 @@ from sensor_msgs.msg import Image as RosImage
 
 _IMAGE_QOS = QoSProfile(
     depth=1,
-    history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-    durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
-    reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    reliability=QoSReliabilityPolicy.BEST_EFFORT,
 )
 
 

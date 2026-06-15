@@ -23,13 +23,19 @@ def generate_launch_description():
             world = os.path.join(package_dir, 'worlds', world)
 
         linear_speed = ParameterValue(
-            LaunchConfiguration('linear_speed', default='0.1'), value_type=float
+            LaunchConfiguration('linear_speed', default='2'), value_type=float
         )
         angular_speed = ParameterValue(
-            LaunchConfiguration('angular_speed', default='0.1'), value_type=float
+            LaunchConfiguration('angular_speed', default='2'), value_type=float
         )
         max_speed = ParameterValue(
-            LaunchConfiguration('max_speed', default='0.5'), value_type=float
+            LaunchConfiguration('max_speed', default='2'), value_type=float
+        )
+        teleop_cmd_vel_topic = context.perform_substitution(
+            LaunchConfiguration('teleop_cmd_vel_topic')
+        )
+        cmd_vel_topic = context.perform_substitution(
+            LaunchConfiguration('cmd_vel_topic')
         )
 
         webots = WebotsLauncher(world=world)
@@ -38,6 +44,9 @@ def generate_launch_description():
             robot_name='my_robot',
             parameters=[
                 {'robot_description': robot_description_path},
+            ],
+            remappings=[
+                ('cmd_vel', cmd_vel_topic),
             ],
         )
 
@@ -49,6 +58,21 @@ def generate_launch_description():
                     'linear_speed': linear_speed,
                     'angular_speed': angular_speed,
                     'max_speed': max_speed,
+                    'cmd_vel_topic': teleop_cmd_vel_topic,
+                }
+            ],
+        )
+
+        cmd_vel_relay = Node(
+            package='robot',
+            executable='vel_augmenter',
+            parameters=[
+                {
+                    'input_cmd_vel_topic': teleop_cmd_vel_topic,
+                    'output_cmd_vel_topic': cmd_vel_topic,
+                    'period': 0.0,
+                    'turn_value': 0.0,
+                    'duration': 0.0,
                 }
             ],
         )
@@ -57,6 +81,7 @@ def generate_launch_description():
             webots,
             webots_driver,
             keyboard_teleop,
+            cmd_vel_relay,
             launch.actions.RegisterEventHandler(
                 event_handler=launch.event_handlers.OnProcessExit(
                     target_action=webots,
@@ -77,18 +102,28 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'linear_speed',
-                default_value='0.1',
+                default_value='2',
                 description='Keyboard teleop linear speed step (m/s).',
             ),
             DeclareLaunchArgument(
                 'angular_speed',
-                default_value='0.1',
+                default_value='2',
                 description='Keyboard teleop angular speed step (rad/s).',
             ),
             DeclareLaunchArgument(
                 'max_speed',
-                default_value='0.5',
+                default_value='2',
                 description='Keyboard teleop maximum speed.',
+            ),
+            DeclareLaunchArgument(
+                'teleop_cmd_vel_topic',
+                default_value='cmd_vel_teleop',
+                description='Keyboard teleop Twist topic (subscribe here for behaviour_recorder).',
+            ),
+            DeclareLaunchArgument(
+                'cmd_vel_topic',
+                default_value='cmd_vel',
+                description='Twist topic consumed by the Webots driver.',
             ),
             OpaqueFunction(function=launch_setup),
         ]

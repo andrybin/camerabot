@@ -19,12 +19,14 @@ class KeyboardTeleopNode(Node):
         self.declare_parameter('linear_speed', 0.1)
         self.declare_parameter('angular_speed', 0.1)
         self.declare_parameter('max_speed', 0.5)
+        self.declare_parameter('cmd_vel_topic', 'cmd_vel')
         self.linear_speed = float(self.get_parameter('linear_speed').value)
         self.angular_speed = float(self.get_parameter('angular_speed').value)
         self.max_speed = float(self.get_parameter('max_speed').value)
+        cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
         self.command_changed = False
         
-        self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 1)
+        self.cmd_vel_publisher = self.create_publisher(Twist, cmd_vel_topic, 1)
         self.current_twist = Twist()
         self.publish_timer = self.create_timer(0.1, self._publish_current_command)
 

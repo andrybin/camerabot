@@ -19,14 +19,14 @@ def generate_launch_description():
         LaunchConfiguration('max_ang_speed', default='0.5'), value_type=float
     )
     past_frames = ParameterValue(
-        LaunchConfiguration('past_frames', default='0'), value_type=int
+        LaunchConfiguration('past_frames', default='3'), value_type=int
     )
 
     return LaunchDescription(
         [
             DeclareLaunchArgument(
                 'output_dir',
-                default_value='behaviour_recordings',
+                default_value='behavclon/records',
                 description='Directory for saved JPEGs (relative to cwd if not absolute).',
             ),
             DeclareLaunchArgument(
@@ -39,7 +39,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'cmd_vel_topic',
-                default_value='cmd_vel',
+                default_value='cmd_vel_teleop',
                 description='Twist command topic to pair with images.',
             ),
             DeclareLaunchArgument(
@@ -50,12 +50,12 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 'max_lin_speed',
                 default_value='0.5',
-                description='Maximum linear speed for filename scaling.',
+                description='Max linear speed used to discretize propagation (F/N/B).',
             ),
             DeclareLaunchArgument(
                 'max_ang_speed',
                 default_value='0.5',
-                description='Maximum angular speed for filename scaling.',
+                description='Max angular speed used to discretize turn (L/N/R).',
             ),
             DeclareLaunchArgument(
                 'past_frames',

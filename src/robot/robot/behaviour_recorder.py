@@ -2,6 +2,7 @@ import os
 import zipfile
 from collections import deque
 from copy import deepcopy
+from pathlib import Path
 
 import cv2
 import rclpy
@@ -15,6 +16,8 @@ from rclpy.qos import (
     QoSReliabilityPolicy,
 )
 from sensor_msgs.msg import Image as RosImage
+
+from behavclon.control_codec import encode_control_code
 
 _IMAGE_QOS = QoSProfile(
     depth=1,
@@ -56,12 +59,12 @@ class BehaviourRecorderNode(Node):
 
         self.declare_parameter('image_topic', '/camera/image_color')
         self.declare_parameter('cmd_vel_topic', 'cmd_vel')
-        self.declare_parameter('output_dir', 'behaviour_recordings')
+        self.declare_parameter('output_dir', 'behavclon/records')
         self.declare_parameter('twist_epsilon', 1e-4)
         self.declare_parameter('jpeg_quality', 92)
         self.declare_parameter('max_lin_speed', 0.5)
         self.declare_parameter('max_ang_speed', 0.5)
-        self.declare_parameter('past_frames', 0)
+        self.declare_parameter('past_frames', 3)
 
         image_topic = self.get_parameter('image_topic').get_parameter_value().string_value
         cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
@@ -91,8 +94,9 @@ class BehaviourRecorderNode(Node):
             self.get_logger().warn('past_frames < 0; using 0')
             self._past_frames = 0
 
-        os.makedirs(output_dir, exist_ok=True)
-        self._output_dir = os.path.abspath(output_dir)
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        self._output_dir = str(output_path)
         self._bridge = CvBridge()
         self._latest_cv_image = None
         self._last_recorded_twist: Twist | None = None
@@ -119,10 +123,14 @@ class BehaviourRecorderNode(Node):
         self._pending_save = True
 
     def _recording_filename(self, stamp_ns: int, twist: Twist) -> str:
-        """{timestamp}_linear-vel_{lx}_angular_vel_{wz}.jpg — linear.x and angular.z."""
-        lx = twist.linear.x/self._max_lin_speed*100
-        wz = twist.angular.z/self._max_ang_speed*100
-        return f'{stamp_ns}_{lx:.0f}_{wz:.0f}.jpg'
+        """{stamp_ns}_{propagation}{turn}.jpg — e.g. FN, FL, FR, BN, BL, BR, NN."""
+        code = encode_control_code(
+            twist.linear.x,
+            twist.angular.z,
+            max_lin_speed=self._max_lin_speed,
+            max_ang_speed=self._max_ang_speed,
+        )
+        return f'{stamp_ns}_{code}.jpg'
 
     def _write_history_zip(
         self, zip_stamp_ns: int, past_entries: list, encode_params: list

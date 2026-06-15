@@ -45,6 +45,7 @@ def generate_launch_description():
             robot_name='my_robot',
             parameters=[
                 {'robot_description': robot_description_path},
+                {'cmd_vel_topic': cmd_vel_topic},
             ],
         )
 
@@ -91,7 +92,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'weights_path',
-                default_value='',
+                default_value='behavclon/work_dirs/model.onnx',
                 description=(
                     'Path to behaviour clone ONNX model (export with behavclon.scripts.export). Required.'
                 ),

@@ -32,7 +32,7 @@ def generate_launch_description():
             LaunchConfiguration('max_speed', default='2'), value_type=float
         )
         period = ParameterValue(
-            LaunchConfiguration('period', default='3.0'), value_type=float
+            LaunchConfiguration('period', default='5.0'), value_type=float
         )
         turn_value = ParameterValue(
             LaunchConfiguration('turn_value', default='1.0'), value_type=float
@@ -40,11 +40,11 @@ def generate_launch_description():
         duration = ParameterValue(
             LaunchConfiguration('duration', default='1.0'), value_type=float
         )
-        input_cmd_vel_topic = context.perform_substitution(
-            LaunchConfiguration('input_cmd_vel_topic')
+        teleop_cmd_vel_topic = context.perform_substitution(
+            LaunchConfiguration('teleop_cmd_vel_topic')
         )
-        output_cmd_vel_topic = context.perform_substitution(
-            LaunchConfiguration('output_cmd_vel_topic')
+        cmd_vel_topic = context.perform_substitution(
+            LaunchConfiguration('cmd_vel_topic')
         )
 
         webots = WebotsLauncher(world=world)
@@ -53,6 +53,9 @@ def generate_launch_description():
             robot_name='my_robot',
             parameters=[
                 {'robot_description': robot_description_path},
+            ],
+            remappings=[
+                ('cmd_vel', cmd_vel_topic),
             ],
         )
 
@@ -64,10 +67,8 @@ def generate_launch_description():
                     'linear_speed': linear_speed,
                     'angular_speed': angular_speed,
                     'max_speed': max_speed,
+                    'cmd_vel_topic': teleop_cmd_vel_topic,
                 }
-            ],
-            remappings=[
-                ('cmd_vel', input_cmd_vel_topic),
             ],
         )
 
@@ -76,8 +77,8 @@ def generate_launch_description():
             executable='vel_augmenter',
             parameters=[
                 {
-                    'input_cmd_vel_topic': input_cmd_vel_topic,
-                    'output_cmd_vel_topic': output_cmd_vel_topic,
+                    'input_cmd_vel_topic': teleop_cmd_vel_topic,
+                    'output_cmd_vel_topic': cmd_vel_topic,
                     'period': period,
                     'turn_value': turn_value,
                     'duration': duration,
@@ -124,12 +125,12 @@ def generate_launch_description():
                 description='Keyboard teleop maximum speed.',
             ),
             DeclareLaunchArgument(
-                'input_cmd_vel_topic',
+                'teleop_cmd_vel_topic',
                 default_value='cmd_vel_teleop',
-                description='Raw keyboard teleop Twist topic (input to vel_augmenter).',
+                description='Keyboard teleop Twist topic (subscribe here for behaviour_recorder).',
             ),
             DeclareLaunchArgument(
-                'output_cmd_vel_topic',
+                'cmd_vel_topic',
                 default_value='cmd_vel',
                 description='Augmented Twist topic consumed by the Webots driver.',
             ),

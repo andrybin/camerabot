@@ -10,13 +10,13 @@ _MOTOR_FLIP_EPS = 1e-9
 
 
 class WebotsDriver(BaseDriver):
-    def __init__(self):
-        # Webots instantiates plugins with no constructor args; ROS init happens in init().
-        pass
+    def __init__(self, max_steps_without_command: int = 50):
+        # The Webots ROS 2 driver instantiates plugins with no constructor args.
+        # Keep constructor arg-free (with defaults) and do ROS init here.
+        super().__init__(max_steps_without_command)
 
     def init(self, robot_node, properties, max_steps_without_command=60):
-        cmd_vel_topic = properties.get('cmd_vel_topic', 'cmd_vel')
-
+        
         self.__robot = robot_node.robot
 
         self._left_motor = self.__robot.getDevice('left wheel motor')
@@ -26,7 +26,7 @@ class WebotsDriver(BaseDriver):
         self._right_motor = self.__robot.getDevice('right wheel motor')
         self._right_motor.setPosition(float('inf'))
         self._right_motor.setVelocity(0)
-        super().__init__(max_steps_without_command, cmd_vel_topic=cmd_vel_topic)
+        super().__init__(max_steps_without_command)
 
     @log_command_if_changed
     def velocity_to_motors(self, command_motor_left, command_motor_right):
