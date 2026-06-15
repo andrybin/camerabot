@@ -18,9 +18,10 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
 
 def main() -> int:
     args, overrides = parse_args()
-    config = parse_config(Path(args.cfg), overrides=overrides)
-    converter = init_from_config(config["converter"])
-    converter.prepare()
+    cfg = parse_config(Path(args.cfg), overrides=overrides)
+    converter = init_from_config(cfg["converter"])
+    markup_updated = converter.prepare()
+    init_from_config(cfg["dataset_train_val_splitter"]).split_and_save(markup_updated)
 
 
 if __name__ == "__main__":

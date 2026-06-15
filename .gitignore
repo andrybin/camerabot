@@ -1,8 +1,9 @@
 /build
 /install
 /log
-/behaviour_records
+/behavclon/records
 /behavclon/dataset
 /behavclon/work_dirs
+/behaviour_records
 *.pyc
 .venv*

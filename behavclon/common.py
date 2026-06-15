@@ -5,15 +5,24 @@ from typing import Any, Dict, Type
 
 import numpy as np
 
+from behavclon.control_codec import (
+    CONTROL_CODE_THRESHOLD,
+    PROPAGATION_VALUE,
+    TURN_VALUE,
+    encode_control_code,
+    parse_control_code,
+)
 from mlengine.common.type import FrameMarkupObject, FramePredictionObject
-
-PROPAGATION_VALUE = {"F": 1.0, "N": 0.0}
-TURN_VALUE = {"L": -1.0, "N": 0.0, "R": 1.0}
 
 __all__ = [
     "ControlCommandMarkup",
     "ControlCommandPredicted",
     "OBJECT_TYPE_MAPPING",
+    "CONTROL_CODE_THRESHOLD",
+    "PROPAGATION_VALUE",
+    "TURN_VALUE",
+    "encode_control_code",
+    "parse_control_code",
 ]
 
 

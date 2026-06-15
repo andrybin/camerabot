@@ -22,6 +22,15 @@
             "args": [
                 "--cfg", "behavclon/configs/common.yaml",
             ]
+        },
+        {
+            "name": "Export ONNX",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "behavclon.scripts.export",
+            "args": [
+                "--cfg", "behavclon/configs/common.yaml",
+            ]
         }
     ]
 }

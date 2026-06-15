@@ -14,3 +14,4 @@ if [ -f "$SCRIPT_DIR/install/local_setup.sh" ]; then
   source "$SCRIPT_DIR/install/local_setup.sh"
   echo ✅ Local setup sourced
 fi
+export PYTHONPATH="${SCRIPT_DIR}${PYTHONPATH:+:$PYTHONPATH}"

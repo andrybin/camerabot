@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+from behavclon.control_codec import parse_control_code
 from behavclon.common import ControlCommandMarkup
 from mlengine.dataset.serializers import ImageFileSerializer
 from mlengine.common.type import Frame, Markup, Scene
@@ -51,7 +52,7 @@ class BehaviourRecorderConverter:
             parsed = self._parse_labelled_frame(path)
             if parsed is None:
                 continue
-            stamp_ns, (propagation, turn) = parsed
+            stamp_ns, propagation, turn = parsed
 
             scene_id = self._scene_id(path)
             image_filename = self._save_image(path, stamp_ns, scene_id)
@@ -75,11 +76,16 @@ class BehaviourRecorderConverter:
         markup.save(self.markup_path)
         return markup
 
-    def _parse_labelled_frame(self, path: Path) -> tuple[str, str] | None:
+    def _parse_labelled_frame(self, path: Path) -> tuple[str, str, str] | None:
         match = _LABEL_RE.match(path.name)
         if not match:
             return None
-        return match.group(1), match.group(2)
+        stamp_ns, control_code = match.group(1), match.group(2)
+        try:
+            propagation, turn = parse_control_code(control_code)
+        except ValueError:
+            return None
+        return stamp_ns, propagation, turn
 
     def _scene_id(self, path: Path) -> str:
         rel_parent = path.parent.relative_to(self.source_dir)

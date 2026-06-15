@@ -1,8 +1,8 @@
 data_dir: behavclon/dataset
-img_size: [128, 64]
+img_size: [128, 128]
 val_frac: 0.1
 seed: 0
-source_dir: behaviour_records
+source_dir: behavclon/records
 work_dir: behavclon/work_dirs
 
 image_serializer:
@@ -18,6 +18,16 @@ converter:
   markup_filename: markup.json
   image_serializer: ${image_serializer}
   target_label: control
+
+dataset_train_val_splitter:
+  type: mlengine.dataset.TrainValSplitter
+  random_seed: 0
+  data_root: ${data_dir}
+  scene_split:
+    train: 0.8
+    val: 0.2
+  train_markup_filename: markup_train.json
+  val_markup_filename: markup_val.json
 
 train_dataset:
   type: behavclon.loader.BehaviourCloneDataset
@@ -52,7 +62,7 @@ model:
 train_pipeline:
   type: mlengine.training.TrainValPipeline
   device: auto
-  epochs: 200
+  epochs: 400
   val_interval: 1
   batch_size: 32
   shuffle: true
@@ -81,3 +91,9 @@ train_pipeline:
     type: mlengine.training.monitoring.TensorBoardMonitor
     logdir: ${work_dir}/tensorboard
     output_dir: ${work_dir}
+
+export:
+  type: behavclon.deploy.BehaviourCloneDeploy
+  model: ${model}
+  ckpt: ${work_dir}/best.pth
+  output_path: ${work_dir}/model.onnx
