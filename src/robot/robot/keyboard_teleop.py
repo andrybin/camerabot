@@ -78,14 +78,10 @@ class KeyboardTeleopNode(Node):
         self.last_command_is_lin = True
 
     def _increment_angular_speed(self, speed):
-        if not self.last_command_is_lin:
-            if speed * self.current_twist.angular.z < 0:
-                self.current_twist.angular.z = speed
-            else:
-                self.current_twist.angular.z += speed
-
-        else:
-            self.current_twist.angular.z = speed
+        if self.current_twist.angular.z*speed < 0:
+            self.current_twist.angular.z = 0.
+        
+        self.current_twist.angular.z += speed
         if abs(self.current_twist.angular.z) > self.max_speed:
             self.current_twist.angular.z = self.max_speed if self.current_twist.angular.z > 0 else -self.max_speed
         self.command_changed = True
@@ -171,12 +167,12 @@ class KeyboardTeleopNode(Node):
 
     def _rotate_counterclockwise(self):
         # 🚀 Increment speed if already rotating counterclockwise
-        self._increment_angular_speed(self.angular_speed*self.moving_dir)
+        self._increment_angular_speed(-self.angular_speed)
         self.get_logger().info(f'🔄 Rotate counterclockwise: {self.current_twist.angular.z:.2f}')
 
     def _rotate_clockwise(self):
         # 🚀 Increment speed if already rotating clockwise
-        self._increment_angular_speed(-self.angular_speed*self.moving_dir)
+        self._increment_angular_speed(self.angular_speed)
         self.get_logger().info(f'🔁 Rotate clockwise: {self.current_twist.angular.z:.2f}')
 
     def _stop_robot(self):

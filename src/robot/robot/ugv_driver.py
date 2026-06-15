@@ -38,11 +38,6 @@ class ReadLine:
 			self.lidar_ser = None
 		self.ANGLE_PER_FRAME = 12
 		self.HEADER = 0x54
-		self.lidar_angles = []
-		self.lidar_distances = []
-		self.lidar_angles_show = []
-		self.lidar_distances_show = []
-		self.last_start_angle = 0
 
 	def readline(self):
 		i = self.buf.find(b"\n")
@@ -176,7 +171,7 @@ class UGVDriver(BaseDriver):
 
     @log_command_if_changed
     def velocity_to_motors(self, command_motor_left, command_motor_right):
-        self._hardware_controller.base_speed_ctrl(command_motor_left, command_motor_right)
+        self._hardware_controller.base_speed_ctrl(-command_motor_left, -command_motor_right)
 
 
 def main(args: Optional[list[str]] = None) -> None:
