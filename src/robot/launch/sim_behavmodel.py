@@ -34,7 +34,8 @@ def generate_launch_description():
             LaunchConfiguration('max_ang_speed', default='0.5'), value_type=float
         )
         num_past = ParameterValue(LaunchConfiguration('num_past', default='4'), value_type=int)
-        img_size = ParameterValue(LaunchConfiguration('img_size', default='128'), value_type=int)
+        img_width = ParameterValue(LaunchConfiguration('img_width', default='128'), value_type=int)
+        img_height = ParameterValue(LaunchConfiguration('img_height', default='64'), value_type=int)
         publish_rate_hz = ParameterValue(
             LaunchConfiguration('publish_rate_hz', default='0.0'), value_type=float
         )
@@ -61,7 +62,8 @@ def generate_launch_description():
                     'max_ang_speed': max_ang_speed,
                     'device': device,
                     'num_past': num_past,
-                    'img_size': img_size,
+                    'img_width': img_width,
+                    'img_height': img_height,
                     'publish_rate_hz': publish_rate_hz,
                 }
             ],
@@ -127,9 +129,14 @@ def generate_launch_description():
                 description='Past-frame stack size (checkpoint usually overrides).',
             ),
             DeclareLaunchArgument(
-                'img_size',
+                'img_width',
                 default_value='128',
-                description='Square resize side (checkpoint usually overrides).',
+                description='Model input width in pixels (ONNX usually overrides).',
+            ),
+            DeclareLaunchArgument(
+                'img_height',
+                default_value='64',
+                description='Model input height in pixels (ONNX usually overrides).',
             ),
             DeclareLaunchArgument(
                 'publish_rate_hz',

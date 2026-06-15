@@ -5,6 +5,7 @@ _share = f'share/{package_name}'
 
 _LAUNCH = [
     'launch/behaviour_recorder.py',
+    'launch/robot_behavmodel.py',
     'launch/robot_teleop.py',
     'launch/sensing_control.py',
     'launch/sim_behavmodel.py',
