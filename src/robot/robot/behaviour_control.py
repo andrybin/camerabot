@@ -21,6 +21,8 @@ from rclpy.qos import (
 )
 from sensor_msgs.msg import Image as RosImage
 
+from robot.behaviour_preprocess import preprocess_rgb_to_chw
+
 _IMAGE_QOS = QoSProfile(
     depth=1,
     history=QoSHistoryPolicy.KEEP_LAST,
@@ -67,13 +69,13 @@ def _build_stacked_chw(
     return np.concatenate(out, axis=0)
 
 
-def _ros_image_to_chw(bridge: CvBridge, msg: RosImage, img_size: int) -> np.ndarray:
-    """RGB CHW float32 [0,1], square resize (matches torchvision Resize + ToTensor)."""
+def _ros_image_to_chw(
+    bridge: CvBridge, msg: RosImage, img_w: int, img_h: int
+) -> np.ndarray:
+    """RGB CHW float32 [0,1] (matches behavclon/preprocess.py)."""
     bgr = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    rgb = cv2.resize(rgb, (img_size, img_size), interpolation=cv2.INTER_LINEAR)
-    chw = np.ascontiguousarray(rgb.transpose(2, 0, 1).astype(np.float32)) * (1.0 / 255.0)
-    return chw
+    return preprocess_rgb_to_chw(rgb, img_w, img_h)
 
 
 class BehaviourControlNode(Node):
@@ -87,7 +89,8 @@ class BehaviourControlNode(Node):
         self.declare_parameter('max_ang_speed', 0.5)
         self.declare_parameter('device', 'cpu')
         self.declare_parameter('num_past', 4)
-        self.declare_parameter('img_size', 128)
+        self.declare_parameter('img_width', 128)
+        self.declare_parameter('img_height', 64)
         self.declare_parameter('publish_rate_hz', 0.0)
 
         weights_path = os.path.expanduser(
@@ -99,7 +102,8 @@ class BehaviourControlNode(Node):
         self._max_ang = float(self.get_parameter('max_ang_speed').get_parameter_value().double_value)
         device_str = self.get_parameter('device').get_parameter_value().string_value.strip().lower()
         param_num_past = int(self.get_parameter('num_past').get_parameter_value().integer_value)
-        param_img_size = int(self.get_parameter('img_size').get_parameter_value().integer_value)
+        param_img_w = int(self.get_parameter('img_width').get_parameter_value().integer_value)
+        param_img_h = int(self.get_parameter('img_height').get_parameter_value().integer_value)
         rate_hz = float(self.get_parameter('publish_rate_hz').get_parameter_value().double_value)
 
         if not weights_path:
@@ -127,17 +131,25 @@ class BehaviourControlNode(Node):
         if in_ch is None or in_ch % 3 != 0:
             raise RuntimeError(f'ONNX input channels must be known and a multiple of 3, got {in_ch!r}')
         num_past_from_model = in_ch // 3 - 1
-        if h_in is None or w_in is None or h_in != w_in:
-            raise RuntimeError(f'ONNX input must have fixed square H=W, got H={h_in!r} W={w_in!r}')
-        img_size = int(h_in)
+        if h_in is None or w_in is None:
+            raise RuntimeError(f'ONNX input must have fixed H and W, got H={h_in!r} W={w_in!r}')
+        img_h = int(h_in)
+        img_w = int(w_in)
 
-        if param_num_past != num_past_from_model or param_img_size != img_size:
+        if (
+            param_num_past != num_past_from_model
+            or param_img_w != img_w
+            or param_img_h != img_h
+        ):
             self.get_logger().warn(
-                f'ROS params num_past={param_num_past} img_size={param_img_size} differ from '
-                f'ONNX model (num_past={num_past_from_model}, img_size={img_size}); using model values.'
+                f'ROS params num_past={param_num_past} img_width={param_img_w} '
+                f'img_height={param_img_h} differ from ONNX '
+                f'(num_past={num_past_from_model}, img_width={img_w}, img_height={img_h}); '
+                'using model values.'
             )
         self._num_past = num_past_from_model
-        self._img_size = img_size
+        self._img_w = img_w
+        self._img_h = img_h
 
         so = ort.SessionOptions()
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
@@ -164,14 +176,15 @@ class BehaviourControlNode(Node):
 
         self.get_logger().info(
             f'behaviour_control (ONNX): model={weights_path!r} providers={self._session.get_providers()} '
-            f'num_past={self._num_past} img_size={self._img_size} camera={self._camera_topic!r} '
+            f'num_past={self._num_past} img_size={self._img_w}x{self._img_h} '
+            f'camera={self._camera_topic!r} '
             f'cmd_vel={cmd_vel_topic!r} timer_hz={rate_hz} '
             f'head_tanh={self._head_tanh} target_space_atanh={self._target_space_atanh}'
         )
 
     def _image_callback(self, msg: RosImage):
         try:
-            cur_chw = _ros_image_to_chw(self._bridge, msg, self._img_size)
+            cur_chw = _ros_image_to_chw(self._bridge, msg, self._img_w, self._img_h)
         except Exception as exc:
             self.get_logger().error(f'Failed to convert image: {exc}')
             return
