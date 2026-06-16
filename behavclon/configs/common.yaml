@@ -21,7 +21,6 @@ converter:
 
 dataset_train_val_splitter:
   type: mlengine.dataset.TrainValSplitter
-  random_seed: 0
   data_root: ${data_dir}
   scene_split:
     train: 0.8

@@ -1,6 +1,8 @@
-from .splitters import TrainFractionsSplitter, TrainValSplitter
+from .splitters import TrainFractionsSplitter, TrainValSplitter, TrainValSplitterCfg, TrainFractionsSplitterCfg
 
 __all__ = [
     TrainFractionsSplitter,
-    TrainValSplitter
+    TrainValSplitter,
+    TrainValSplitterCfg,
+    TrainFractionsSplitterCfg,
 ]

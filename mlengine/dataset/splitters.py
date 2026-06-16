@@ -71,8 +71,8 @@ class TrainValSplitter:
             split_scene_ids[split_name] = scene_ids[start:end]
             start = end
 
-        train_markup = Markup(scene_map[scene_id] for scene_id in split_scene_ids["train"])
-        val_markup = Markup(scene_map[scene_id] for scene_id in split_scene_ids["val"])
+        train_markup = Markup([scene_map[scene_id] for scene_id in split_scene_ids["train"]])
+        val_markup = Markup([scene_map[scene_id] for scene_id in split_scene_ids["val"]])
         return train_markup, val_markup
 
     def split_and_save(self, path_or_markup: str | Markup) -> None:

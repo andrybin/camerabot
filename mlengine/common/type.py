@@ -79,6 +79,9 @@ class Markup:
     def __iter__(self):
         return iter(self.scenes)
 
+    def __len__(self) -> int:
+        return len(self.scenes)
+
     def to_json(self) -> Dict[str, Dict[str, Any]]:
         return {scene.scene_id: scene.to_dict() for scene in self.scenes}
 
