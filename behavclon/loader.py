@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
-from torchvision import transforms
 
 from behavclon.augmentation import ImageAugmentations
 from behavclon.common import ControlCommandMarkup
@@ -55,13 +55,6 @@ class BehaviourCloneDataset(Dataset):
         if cfg.image_serializer is None:
             raise ValueError("image_serializer is required")
         self.image_serializer = cfg.image_serializer
-        img_w, img_h = self.img_size
-        self.transform = transforms.Compose(
-            [
-                transforms.Resize((img_h, img_w)),
-                transforms.ToTensor(),
-            ]
-        )
         self.scene_frames: list[list[tuple[str, ControlCommandMarkup]]] = []
         self.samples: list[BehaviourCloneSample] = []
         self.prepare_samples()
@@ -113,19 +106,23 @@ class BehaviourCloneDataset(Dataset):
                 )
             )
 
-    def _load_image_tensor(self, image_filename: str) -> torch.Tensor:
+    def _load_image_array(self, image_filename: str) -> np.ndarray:
         image = self.image_serializer(image_filename).load()
-        return self.transform(image.convert(self.image_serializer.cfg.mode))
+        return np.asarray(image.convert(self.image_serializer.cfg.mode))
+
+    @staticmethod
+    def _array_to_tensor(image: np.ndarray) -> torch.Tensor:
+        return torch.from_numpy(image).permute(2, 0, 1).float().div_(255.0)
 
     def __len__(self) -> int:
         return len(self.samples)
 
     def __getitem__(self, idx: int) -> tuple[str, torch.Tensor, list[ControlCommandMarkup]]:
         sample = self.samples[idx]
-        image = self._load_image_tensor(sample.image_filename)
+        image = self._load_image_array(sample.image_filename)
         targets = [copy.deepcopy(sample.target)]
 
         if self.augmentations is not None:
             image, targets = self.augmentations(image, targets).apply_all()
 
-        return sample.id, image, targets
+        return sample.id, self._array_to_tensor(image), targets

@@ -27,7 +27,10 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 'output_dir',
                 default_value='behavclon/records',
-                description='Directory for saved JPEGs (relative to cwd if not absolute).',
+                description=(
+                    'Parent directory for timestamped record subfolders '
+                    '(relative to cwd if not absolute).'
+                ),
             ),
             DeclareLaunchArgument(
                 'image_topic',
@@ -59,7 +62,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'past_frames',
-                default_value='0',
+                default_value='3',
                 description=(
                     'Ring buffer size: on each save, zip this many prior frames into '
                     '<timestamp>.zip beside the JPEG (0 disables).'

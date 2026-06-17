@@ -1,5 +1,5 @@
 data_dir: behavclon/dataset
-img_size: [128, 128]
+img_size: [128, 64]
 val_frac: 0.1
 seed: 0
 source_dir: behavclon/records
@@ -35,10 +35,11 @@ train_dataset:
   split: train
   val_frac: ${val_frac}
   seed: ${seed}
-  markup_filename: markup.json
+  markup_filename: markup_train.json
   image_serializer: ${image_serializer}
   augmentations:
     type: behavclon.augmentation.ImageAugmentations
+    resize_center_crop: ${img_size}
     flip_h: 0.5
 
 val_dataset:
@@ -48,9 +49,11 @@ val_dataset:
   split: val
   val_frac: ${val_frac}
   seed: ${seed}
-  markup_filename: markup.json
+  markup_filename: markup_val.json
   image_serializer: ${image_serializer}
-  augmentations: null
+  augmentations:
+    type: behavclon.augmentation.ImageAugmentations
+    resize_center_crop: ${img_size}
 
 model:
   type: behavclon.model.BehaviourCloneModel
@@ -61,7 +64,7 @@ model:
 train_pipeline:
   type: mlengine.training.TrainValPipeline
   device: auto
-  epochs: 400
+  epochs: 1000
   val_interval: 1
   batch_size: 32
   shuffle: true
@@ -85,7 +88,7 @@ train_pipeline:
   weights_regularization:
     type: mlengine.training.losses.WeightsRegularization
     regularization_names: [l2_norm]
-    regularization_weights: [1.0e-4]
+    regularization_weights: [1.0e-3]
   monitor:
     type: mlengine.training.monitoring.TensorBoardMonitor
     logdir: ${work_dir}/tensorboard

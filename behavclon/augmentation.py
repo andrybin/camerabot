@@ -4,15 +4,38 @@ import copy
 import random
 from dataclasses import dataclass, fields
 
-import torch
-import torchvision.transforms.functional as TF
+import cv2
+import numpy as np
 
 from behavclon.common import ControlCommandMarkup
 from mlengine.common.type import Targets
 
 
+def resize_longer_edge_center_crop_hwc(
+    rgb: np.ndarray, img_w: int, img_h: int
+) -> np.ndarray:
+    """RGB uint8 HWC. Scale so max(H,W)==max(img_w,img_h), center-crop to img_h x img_w."""
+    max_side = max(img_w, img_h)
+    h, w = rgb.shape[:2]
+    scale = max_side / max(h, w)
+    new_w, new_h = round(w * scale), round(h * scale)
+    resized = cv2.resize(rgb, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    if new_w < img_w or new_h < img_h:
+        scale2 = max(img_w / new_w, img_h / new_h)
+        new_w, new_h = round(new_w * scale2), round(new_h * scale2)
+        resized = cv2.resize(resized, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    left, top = (new_w - img_w) // 2, (new_h - img_h) // 2
+    return resized[top : top + img_h, left : left + img_w]
+
+
+def preprocess_rgb_to_chw(rgb: np.ndarray, img_w: int, img_h: int) -> np.ndarray:
+    cropped = resize_longer_edge_center_crop_hwc(rgb, img_w, img_h)
+    return cropped.transpose(2, 0, 1).astype(np.float32) / 255.0
+
+
 @dataclass
 class ImageAugmentationsCfg:
+    resize_center_crop: list[int] | tuple[int, int] | None = None
     flip_h: float | None = None
 
 
@@ -26,12 +49,12 @@ class ImageAugmentations:
             method = getattr(self, cfg_field.name, None)
             if method is not None:
                 self.augmentations.append((method, params))
-        self._image: torch.Tensor | None = None
+        self._image: np.ndarray | None = None
         self._targets: list[ControlCommandMarkup] | None = None
 
     def __call__(
         self,
-        image: torch.Tensor,
+        image: np.ndarray,
         targets: list[ControlCommandMarkup] | None = None,
     ) -> ImageAugmentations:
         self._image = image
@@ -49,7 +72,7 @@ class ImageAugmentations:
             return
         self._targets = [getattr(target, aug_method)(**kwargs) for target in self._targets]
 
-    def apply_all(self) -> tuple[torch.Tensor, list[ControlCommandMarkup] | None]:
+    def apply_all(self) -> tuple[np.ndarray, list[ControlCommandMarkup] | None]:
         if self._image is None:
             raise ValueError("Image is not set. Call __call__ first.")
         for aug_method, params in self.augmentations:
@@ -59,11 +82,18 @@ class ImageAugmentations:
                 aug_method(params)
         return self.output()
 
-    def output(self) -> tuple[torch.Tensor, list[ControlCommandMarkup] | None]:
+    def output(self) -> tuple[np.ndarray, list[ControlCommandMarkup] | None]:
         return self._image, self._targets
+
+    def resize_center_crop(
+        self, img_size: list[int] | tuple[int, int]
+    ) -> ImageAugmentations:
+        img_w, img_h = int(img_size[0]), int(img_size[1])
+        self._image = resize_longer_edge_center_crop_hwc(self._image, img_w, img_h)
+        return self
 
     def flip_h(self, prob: float = 0.5) -> ImageAugmentations:
         if random.random() < prob:
-            self._image = TF.hflip(self._image)
+            self._image = cv2.flip(self._image, 1)
             self._aug_targets("flip_h")
         return self

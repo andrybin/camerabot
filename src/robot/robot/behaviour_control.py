@@ -21,7 +21,7 @@ from rclpy.qos import (
 )
 from sensor_msgs.msg import Image as RosImage
 
-from robot.behaviour_preprocess import preprocess_rgb_to_chw
+from behavclon.augmentation import preprocess_rgb_to_chw
 
 _IMAGE_QOS = QoSProfile(
     depth=1,
@@ -72,7 +72,7 @@ def _build_stacked_chw(
 def _ros_image_to_chw(
     bridge: CvBridge, msg: RosImage, img_w: int, img_h: int
 ) -> np.ndarray:
-    """RGB CHW float32 [0,1] (matches behavclon/preprocess.py)."""
+    """RGB CHW float32 [0,1] (matches behavclon.augmentation.preprocess_rgb_to_chw)."""
     bgr = bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
     return preprocess_rgb_to_chw(rgb, img_w, img_h)

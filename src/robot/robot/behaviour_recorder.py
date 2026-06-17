@@ -2,6 +2,7 @@ import os
 import zipfile
 from collections import deque
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 
 import cv2
@@ -94,16 +95,14 @@ class BehaviourRecorderNode(Node):
             self.get_logger().warn('past_frames < 0; using 0')
             self._past_frames = 0
 
-        output_path = Path(output_dir)
+        output_path = Path(output_dir) / datetime.now().strftime('%y:%m:%d:%H:%M:%S')
         output_path.mkdir(parents=True, exist_ok=True)
         self._output_dir = str(output_path)
         self._bridge = CvBridge()
         self._latest_cv_image = None
-        self._last_recorded_twist: Twist | None = None
-        self._pending_save = False
-        self._pending_twist: Twist | None = None
+        self._last_recorded_twist: Twist = Twist()
         self._frame_buffer: deque | None = (
-            deque(maxlen=self._past_frames) if self._past_frames > 0 else None
+            deque(maxlen=self._past_frames + 1) if self._past_frames > 0 else None
         )
 
         self.create_subscription(RosImage, image_topic, self._image_callback, _IMAGE_QOS)
@@ -119,8 +118,37 @@ class BehaviourRecorderNode(Node):
             msg, self._last_recorded_twist, self._twist_epsilon
         ):
             return
-        self._pending_twist = deepcopy(msg)
-        self._pending_save = True
+
+        cv_image = self._latest_cv_image
+        if cv_image is None:
+            self.get_logger().warn('No image received yet; skipping behaviour record')
+            return
+
+        twist = deepcopy(msg)
+        past_snapshot = list(self._frame_buffer)[:-1] if self._frame_buffer is not None else []
+        encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), self._jpeg_quality]
+        stamp_ns = self.get_clock().now().nanoseconds
+        filename = self._recording_filename(stamp_ns, twist)
+        path = os.path.join(self._output_dir, filename)
+
+        try:
+            frame = cv_image.copy() if not cv_image.flags['C_CONTIGUOUS'] else cv_image
+            ok = cv2.imwrite(path, frame, encode_params)
+            if not ok:
+                self.get_logger().error(f'cv2.imwrite failed for {path!r}')
+                return
+        except Exception as exc:
+            self.get_logger().error(f'Failed to write {path!r}: {exc}')
+            return
+
+        if past_snapshot:
+            try:
+                self._write_history_zip(stamp_ns, past_snapshot, encode_params)
+            except Exception as exc:
+                self.get_logger().error(f'Failed to write history zip: {exc}')
+
+        self._last_recorded_twist = twist
+        self.get_logger().info(f'Saved {filename}')
 
     def _recording_filename(self, stamp_ns: int, twist: Twist) -> str:
         """{stamp_ns}_{propagation}{turn}.jpg — e.g. FN, FL, FR, BN, BL, BR, NN."""
@@ -163,37 +191,8 @@ class BehaviourRecorderNode(Node):
             return
 
         self._latest_cv_image = cv_image
-        encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), self._jpeg_quality]
         recv_ns = self.get_clock().now().nanoseconds
         frame_stamp_ns = _image_stamp_ns(msg, recv_ns)
-
-        if self._pending_save and self._pending_twist is not None:
-            past_snapshot = list(self._frame_buffer) if self._frame_buffer is not None else []
-
-            stamp_ns = recv_ns
-            filename = self._recording_filename(stamp_ns, self._pending_twist)
-            path = os.path.join(self._output_dir, filename)
-
-            try:
-                frame = cv_image.copy() if not cv_image.flags['C_CONTIGUOUS'] else cv_image
-                ok = cv2.imwrite(path, frame, encode_params)
-                if not ok:
-                    self.get_logger().error(f'cv2.imwrite failed for {path!r}')
-                    return
-            except Exception as exc:
-                self.get_logger().error(f'Failed to write {path!r}: {exc}')
-                return
-
-            if past_snapshot:
-                try:
-                    self._write_history_zip(stamp_ns, past_snapshot, encode_params)
-                except Exception as exc:
-                    self.get_logger().error(f'Failed to write history zip: {exc}')
-
-            self._last_recorded_twist = deepcopy(self._pending_twist)
-            self._pending_save = False
-            self._pending_twist = None
-            self.get_logger().info(f'Saved {filename}')
 
         if self._frame_buffer is not None:
             self._frame_buffer.append((frame_stamp_ns, cv_image.copy()))

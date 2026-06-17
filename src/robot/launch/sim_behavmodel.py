@@ -28,12 +28,12 @@ def generate_launch_description():
         device = context.perform_substitution(LaunchConfiguration('device'))
 
         max_lin_speed = ParameterValue(
-            LaunchConfiguration('max_lin_speed', default='0.5'), value_type=float
+            LaunchConfiguration('max_lin_speed', default='2'), value_type=float
         )
         max_ang_speed = ParameterValue(
-            LaunchConfiguration('max_ang_speed', default='0.5'), value_type=float
+            LaunchConfiguration('max_ang_speed', default='2'), value_type=float
         )
-        num_past = ParameterValue(LaunchConfiguration('num_past', default='4'), value_type=int)
+        num_past = ParameterValue(LaunchConfiguration('num_past', default='0'), value_type=int)
         img_width = ParameterValue(LaunchConfiguration('img_width', default='128'), value_type=int)
         img_height = ParameterValue(LaunchConfiguration('img_height', default='64'), value_type=int)
         publish_rate_hz = ParameterValue(
@@ -111,12 +111,12 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'max_lin_speed',
-                default_value='0.5',
+                default_value='10',
                 description='Max linear speed (m/s); must match training/recorder scaling.',
             ),
             DeclareLaunchArgument(
                 'max_ang_speed',
-                default_value='0.5',
+                default_value='10',
                 description='Max angular speed (rad/s); must match training/recorder scaling.',
             ),
             DeclareLaunchArgument(
@@ -126,7 +126,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'num_past',
-                default_value='4',
+                default_value='0',
                 description='Past-frame stack size (checkpoint usually overrides).',
             ),
             DeclareLaunchArgument(
