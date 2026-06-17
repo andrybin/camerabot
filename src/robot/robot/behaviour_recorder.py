@@ -18,7 +18,7 @@ from rclpy.qos import (
 )
 from sensor_msgs.msg import Image as RosImage
 
-from behavclon.control_codec import encode_control_code
+from behavclon.common import encode_control_code
 
 _IMAGE_QOS = QoSProfile(
     depth=1,

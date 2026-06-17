@@ -8,8 +8,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-from behavclon.control_codec import parse_control_code
-from behavclon.common import ControlCommandMarkup
+from behavclon.common import ControlCommandMarkup, parse_control_code
 from mlengine.dataset.serializers import ImageFileSerializer
 from mlengine.common.type import Frame, Markup, Scene
 

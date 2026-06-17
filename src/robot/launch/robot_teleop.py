@@ -1,7 +1,10 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.parameter_descriptions import ParameterValue
 
 
@@ -28,6 +31,7 @@ def generate_launch_description():
     max_speed = ParameterValue(
         LaunchConfiguration('max_speed', default='0.5'), value_type=float
     )
+    cmd_vel_topic = LaunchConfiguration('cmd_vel_topic', default='cmd_vel_teleop')
 
     camera_node = Node(
         package='robot',
@@ -55,6 +59,9 @@ def generate_launch_description():
             'UGV_UART': ugv_uart,
             'UGV_BAUD': ugv_baud,
         },
+        remappings=[
+            ('cmd_vel', cmd_vel_topic),
+        ],
     )
 
     keyboard_teleop = Node(
@@ -66,6 +73,7 @@ def generate_launch_description():
                 'linear_speed': linear_speed,
                 'angular_speed': angular_speed,
                 'max_speed': max_speed,
+                'cmd_vel_topic': cmd_vel_topic,
             }
         ],
     )
@@ -96,6 +104,7 @@ def generate_launch_description():
             default_value='0.5',
             description='Keyboard teleop maximum speed.',
         ),
+        DeclareLaunchArgument('cmd_vel_topic', default_value='cmd_vel_teleop'),
         camera_node,
         ugv_driver,
         keyboard_teleop,
