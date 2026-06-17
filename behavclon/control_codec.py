@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 PROPAGATION_VALUE = {"F": 1.0, "N": 0.0, "B": -1.0}
-TURN_VALUE = {"L": 1.0, "N": 0.0, "R": -1.0}
+TURN_VALUE = {"L": -1.0, "N": 0.0, "R": 1.0}
 CONTROL_CODE_THRESHOLD = 0.5
 
 TURN_CODE_FROM_VALUE = {v:k for k, v in TURN_VALUE.items()}
