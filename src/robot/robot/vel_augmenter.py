@@ -2,7 +2,7 @@ import random
 import time
 
 import rclpy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TwistStamped
 from rclpy.node import Node
 
 
@@ -28,7 +28,7 @@ class CmdRedirectNode(Node):
         self._augment_until = 0.0
 
         self._publisher = self.create_publisher(Twist, output_topic, 1)
-        self.create_subscription(Twist, input_topic, self._cmd_vel_callback, 1)
+        self.create_subscription(TwistStamped, input_topic, self._cmd_vel_callback, 1)
 
         if self._period > 0.0 and self._turn_value != 0.0 and self._duration > 0.0:
             self._trigger_random_turn()
@@ -55,10 +55,10 @@ class CmdRedirectNode(Node):
         self._augment_angular_z = 0.0
         return 0.0
 
-    def _cmd_vel_callback(self, msg: Twist):
+    def _cmd_vel_callback(self, msg: TwistStamped):
         out = Twist()
-        out.linear = msg.linear
-        out.angular = msg.angular
+        out.linear = msg.twist.linear
+        out.angular = msg.twist.angular
         out.angular.z += self._active_augment_angular_z()
         self._publisher.publish(out)
 

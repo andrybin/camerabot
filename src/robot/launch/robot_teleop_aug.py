@@ -1,19 +1,16 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    """Launch UGV driver, camera, and keyboard teleop for real robot control."""
+    """Launch UGV driver, camera, keyboard teleop, and velocity augmenter for real robot."""
     camera_source = LaunchConfiguration('camera_source', default='picam2')
     camera_width = ParameterValue(LaunchConfiguration('camera_width', default='640'), value_type=int)
     camera_height = ParameterValue(LaunchConfiguration('camera_height', default='480'), value_type=int)
-    camera_fps = ParameterValue(LaunchConfiguration('camera_fps', default='5'), value_type=int)
+    camera_fps = ParameterValue(LaunchConfiguration('camera_fps', default='20'), value_type=int)
     camera_frame_id = LaunchConfiguration('camera_frame_id', default='camera')
     camera_encoding = LaunchConfiguration('camera_encoding', default='rgb8')
     camera_show_image = ParameterValue(LaunchConfiguration('camera_show_image', default='false'), value_type=bool)
@@ -36,6 +33,15 @@ def generate_launch_description():
     )
     command_stamp_offset_ms = ParameterValue(
         LaunchConfiguration('command_stamp_offset_ms'), value_type=float
+    )
+    period = ParameterValue(
+        LaunchConfiguration('period'), value_type=float
+    )
+    turn_value = ParameterValue(
+        LaunchConfiguration('turn_value'), value_type=float
+    )
+    duration = ParameterValue(
+        LaunchConfiguration('duration'), value_type=float
     )
     teleop_cmd_vel_topic = LaunchConfiguration('teleop_cmd_vel_topic')
     cmd_vel_topic = LaunchConfiguration('cmd_vel_topic')
@@ -71,20 +77,6 @@ def generate_launch_description():
         ],
     )
 
-    cmd_vel_relay = Node(
-        package='robot',
-        executable='vel_augmenter',
-        parameters=[
-            {
-                'input_cmd_vel_topic': teleop_cmd_vel_topic,
-                'output_cmd_vel_topic': cmd_vel_topic,
-                'period': 0.0,
-                'turn_value': 0.0,
-                'duration': 0.0,
-            }
-        ],
-    )
-
     keyboard_teleop = Node(
         package='robot',
         executable='keyboard_teleop',
@@ -97,6 +89,20 @@ def generate_launch_description():
                 'max_ang_speed': max_ang_speed,
                 'cmd_vel_topic': teleop_cmd_vel_topic,
                 'command_stamp_offset_ms': command_stamp_offset_ms,
+            }
+        ],
+    )
+
+    vel_augmenter = Node(
+        package='robot',
+        executable='vel_augmenter',
+        parameters=[
+            {
+                'input_cmd_vel_topic': teleop_cmd_vel_topic,
+                'output_cmd_vel_topic': cmd_vel_topic,
+                'period': period,
+                'turn_value': turn_value,
+                'duration': duration,
             }
         ],
     )
@@ -114,7 +120,7 @@ def generate_launch_description():
         DeclareLaunchArgument('ugv_baud', default_value='115200'),
         DeclareLaunchArgument(
             'linear_speed',
-            default_value='0.2',
+            default_value='0.15',
             description='Keyboard teleop linear speed step (m/s).',
         ),
         DeclareLaunchArgument(
@@ -124,7 +130,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'max_lin_speed',
-            default_value='0.2',
+            default_value='0.15',
             description='Keyboard teleop maximum linear speed (m/s).',
         ),
         DeclareLaunchArgument(
@@ -134,7 +140,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'command_stamp_offset_ms',
-            default_value='100',
+            default_value='-100',
             description=(
                 'Added to cmd header.stamp (ms) to compensate SSH/network delay '
                 'when teleop runs off-robot. Use 0 for local/sim teleop.'
@@ -143,15 +149,30 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'teleop_cmd_vel_topic',
             default_value='cmd_vel_teleop',
-            description='Keyboard teleop TwistStamped topic (subscribe here for behaviour_recorder).',
+            description='Keyboard teleop Twist topic (subscribe here for behaviour_recorder).',
         ),
         DeclareLaunchArgument(
             'cmd_vel_topic',
             default_value='cmd_vel',
-            description='Twist topic consumed by the UGV driver.',
+            description='Augmented Twist topic consumed by the UGV driver.',
+        ),
+        DeclareLaunchArgument(
+            'period',
+            default_value='4.0',
+            description='Interval between random turn injections (seconds).',
+        ),
+        DeclareLaunchArgument(
+            'turn_value',
+            default_value='0.2',
+            description='Random turn magnitude added to angular.z (rad/s).',
+        ),
+        DeclareLaunchArgument(
+            'duration',
+            default_value='0.5',
+            description='How long each random turn lasts (seconds).',
         ),
         camera_node,
         ugv_driver,
         keyboard_teleop,
-        cmd_vel_relay,
+        vel_augmenter,
     ])

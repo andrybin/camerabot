@@ -28,8 +28,14 @@ def generate_launch_description():
         angular_speed = ParameterValue(
             LaunchConfiguration('angular_speed', default='2'), value_type=float
         )
-        max_speed = ParameterValue(
-            LaunchConfiguration('max_speed', default='2'), value_type=float
+        max_lin_speed = ParameterValue(
+            LaunchConfiguration('max_lin_speed', default='2'), value_type=float
+        )
+        max_ang_speed = ParameterValue(
+            LaunchConfiguration('max_ang_speed', default='2'), value_type=float
+        )
+        command_stamp_offset_ms = ParameterValue(
+            LaunchConfiguration('command_stamp_offset_ms', default='0'), value_type=float
         )
         period = ParameterValue(
             LaunchConfiguration('period', default='5.0'), value_type=float
@@ -66,8 +72,10 @@ def generate_launch_description():
                 {
                     'linear_speed': linear_speed,
                     'angular_speed': angular_speed,
-                    'max_speed': max_speed,
+                    'max_lin_speed': max_lin_speed,
+                    'max_ang_speed': max_ang_speed,
                     'cmd_vel_topic': teleop_cmd_vel_topic,
+                    'command_stamp_offset_ms': command_stamp_offset_ms,
                 }
             ],
         )
@@ -120,9 +128,14 @@ def generate_launch_description():
                 description='Keyboard teleop angular speed step (rad/s).',
             ),
             DeclareLaunchArgument(
-                'max_speed',
+                'max_lin_speed',
                 default_value='2',
-                description='Keyboard teleop maximum speed.',
+                description='Keyboard teleop maximum linear speed (m/s).',
+            ),
+            DeclareLaunchArgument(
+                'max_ang_speed',
+                default_value='2',
+                description='Keyboard teleop maximum angular speed (rad/s).',
             ),
             DeclareLaunchArgument(
                 'teleop_cmd_vel_topic',

@@ -2,13 +2,14 @@ import os
 import zipfile
 from collections import deque
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 import cv2
 import rclpy
 from cv_bridge import CvBridge
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TwistStamped
 from rclpy.node import Node
 from rclpy.qos import (
     QoSDurabilityPolicy,
@@ -22,9 +23,9 @@ from behavclon.common import encode_control_code
 
 _IMAGE_QOS = QoSProfile(
     depth=1,
-    history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-    durability=QoSDurabilityPolicy.RMW_QOS_POLICY_DURABILITY_VOLATILE,
-    reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+    history=QoSHistoryPolicy.KEEP_LAST,
+    durability=QoSDurabilityPolicy.VOLATILE,
+    reliability=QoSReliabilityPolicy.BEST_EFFORT,
 )
 
 
@@ -46,12 +47,28 @@ def _twists_close(a: Twist, b: Twist, eps: float) -> bool:
     return True
 
 
-def _image_stamp_ns(msg: RosImage, fallback_ns: int) -> int:
+def _header_stamp_ns(header, fallback_ns: int) -> int:
     """Nanoseconds from message header stamp, or fallback if stamp is unset."""
-    stamp = msg.header.stamp
+    stamp = header.stamp
     if stamp.sec != 0 or stamp.nanosec != 0:
         return int(stamp.sec) * 1_000_000_000 + int(stamp.nanosec)
     return int(fallback_ns)
+
+
+def _image_stamp_ns(msg: RosImage, fallback_ns: int) -> int:
+    return _header_stamp_ns(msg.header, fallback_ns)
+
+
+def _format_time_ns(stamp_ns: int) -> str:
+    return datetime.fromtimestamp(stamp_ns / 1_000_000_000).strftime('%H:%M:%S.%f')[:-3]
+
+
+@dataclass
+class _PendingRecord:
+    cmd_stamp_ns: int
+    twist: Twist
+    best_entry: tuple[int, object] | None = None
+    best_diff_ns: int | None = None
 
 
 class BehaviourRecorderNode(Node):
@@ -99,36 +116,100 @@ class BehaviourRecorderNode(Node):
         output_path.mkdir(parents=True, exist_ok=True)
         self._output_dir = str(output_path)
         self._bridge = CvBridge()
-        self._latest_cv_image = None
         self._last_recorded_twist: Twist = Twist()
-        self._frame_buffer: deque | None = (
-            deque(maxlen=self._past_frames + 1) if self._past_frames > 0 else None
-        )
+        self._pending_record: _PendingRecord | None = None
+        pool_size = max(self._past_frames + 2, 10)
+        self._frame_buffer: deque = deque(maxlen=pool_size)
 
         self.create_subscription(RosImage, image_topic, self._image_callback, _IMAGE_QOS)
-        self.create_subscription(Twist, cmd_vel_topic, self._cmd_vel_callback, 1)
+        self.create_subscription(TwistStamped, cmd_vel_topic, self._cmd_vel_callback, 1)
 
         self.get_logger().info(
             f'behaviour_recorder: writing to {self._output_dir!r} '
             f'(image={image_topic!r}, cmd_vel={cmd_vel_topic!r}, past_frames={self._past_frames})'
         )
 
-    def _cmd_vel_callback(self, msg: Twist):
-        if self._last_recorded_twist is not None and _twists_close(
-            msg, self._last_recorded_twist, self._twist_epsilon
+    def _cmd_vel_callback(self, msg: TwistStamped):
+        twist = msg.twist
+        if self._pending_record is not None and _twists_close(
+            twist, self._pending_record.twist, self._twist_epsilon
         ):
             return
 
-        cv_image = self._latest_cv_image
-        if cv_image is None:
-            self.get_logger().warn('No image received yet; skipping behaviour record')
+        cmd_stamp_ns = _header_stamp_ns(msg.header, self.get_clock().now().nanoseconds)
+        if self._pending_record is not None:
+            self._save_pending_record('new command received')
+        if self._last_recorded_twist is not None and _twists_close(
+            twist, self._last_recorded_twist, self._twist_epsilon
+        ):
             return
 
-        twist = deepcopy(msg)
-        past_snapshot = list(self._frame_buffer)[:-1] if self._frame_buffer is not None else []
+        self._pending_record = _PendingRecord(cmd_stamp_ns, deepcopy(twist))
+        if self._frame_buffer:
+            self._set_pending_best_entry(
+                min(self._frame_buffer, key=lambda entry: abs(entry[0] - cmd_stamp_ns))
+            )
+        else:
+            self.get_logger().warn('No image received yet; waiting for image before behaviour record')
+
+    def _set_pending_best_entry(self, entry: tuple[int, object]) -> None:
+        if self._pending_record is None:
+            return
+
+        image_stamp_ns, _ = entry
+        diff_ns = abs(image_stamp_ns - self._pending_record.cmd_stamp_ns)
+        self._pending_record.best_entry = entry
+        self._pending_record.best_diff_ns = diff_ns
+
+    def _handle_pending_frame(self, entry: tuple[int, object]) -> None:
+        if self._pending_record is None:
+            return
+
+        image_stamp_ns, _ = entry
+        diff_ns = abs(image_stamp_ns - self._pending_record.cmd_stamp_ns)
+        best_diff_ns = self._pending_record.best_diff_ns
+        if best_diff_ns is not None and diff_ns > best_diff_ns:
+            self._save_pending_record('image diff started increasing')
+            return
+
+        self._set_pending_best_entry(entry)
+
+    def _save_pending_record(self, reason: str) -> bool:
+        pending_record = self._pending_record
+        if pending_record is None:
+            return False
+        if pending_record.best_entry is None:
+            self.get_logger().warn(
+                f'No image received for cmd at {_format_time_ns(pending_record.cmd_stamp_ns)}; '
+                f'skipping behaviour record'
+            )
+            self._pending_record = None
+            return False
+
+        image_stamp_ns, cv_image = pending_record.best_entry
+        saved = self._save_record(
+            pending_record.cmd_stamp_ns,
+            pending_record.twist,
+            image_stamp_ns,
+            cv_image,
+            reason,
+        )
+        if saved:
+            self._pending_record = None
+        return saved
+
+    def _save_record(
+        self,
+        cmd_stamp_ns: int,
+        twist: Twist,
+        image_stamp_ns: int,
+        cv_image,
+        reason: str,
+    ) -> bool:
+        delta_ms = (image_stamp_ns - cmd_stamp_ns) / 1_000_000.0
+        past_snapshot = self._past_frames_before(image_stamp_ns)
         encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), self._jpeg_quality]
-        stamp_ns = self.get_clock().now().nanoseconds
-        filename = self._recording_filename(stamp_ns, twist)
+        filename = self._recording_filename(cmd_stamp_ns, twist)
         path = os.path.join(self._output_dir, filename)
 
         try:
@@ -136,19 +217,32 @@ class BehaviourRecorderNode(Node):
             ok = cv2.imwrite(path, frame, encode_params)
             if not ok:
                 self.get_logger().error(f'cv2.imwrite failed for {path!r}')
-                return
+                return False
         except Exception as exc:
             self.get_logger().error(f'Failed to write {path!r}: {exc}')
-            return
+            return False
 
         if past_snapshot:
             try:
-                self._write_history_zip(stamp_ns, past_snapshot, encode_params)
+                self._write_history_zip(cmd_stamp_ns, past_snapshot, encode_params)
             except Exception as exc:
                 self.get_logger().error(f'Failed to write history zip: {exc}')
 
         self._last_recorded_twist = twist
-        self.get_logger().info(f'Saved {filename}')
+        self.get_logger().info(
+            f'Saved {filename} ({reason}, '
+            f'cmd={_format_time_ns(cmd_stamp_ns)}, image={_format_time_ns(image_stamp_ns)}, '
+            f'cmd-image Δ={delta_ms:+.1f} ms, '
+            f'image {"before" if delta_ms < 0 else "after"} cmd)'
+        )
+        return True
+
+    def _past_frames_before(self, anchor_stamp_ns: int) -> list:
+        """Up to past_frames entries strictly before anchor_stamp_ns, oldest first."""
+        if self._past_frames <= 0:
+            return []
+        past = [(s, img) for s, img in self._frame_buffer if s < anchor_stamp_ns]
+        return past[-self._past_frames :]
 
     def _recording_filename(self, stamp_ns: int, twist: Twist) -> str:
         """{stamp_ns}_{propagation}{turn}.jpg — e.g. FN, FL, FR, BN, BL, BR, NN."""
@@ -190,12 +284,11 @@ class BehaviourRecorderNode(Node):
             self.get_logger().error(f'Failed to convert image: {exc}')
             return
 
-        self._latest_cv_image = cv_image
         recv_ns = self.get_clock().now().nanoseconds
         frame_stamp_ns = _image_stamp_ns(msg, recv_ns)
-
-        if self._frame_buffer is not None:
-            self._frame_buffer.append((frame_stamp_ns, cv_image.copy()))
+        frame_entry = (frame_stamp_ns, cv_image.copy())
+        self._frame_buffer.append(frame_entry)
+        self._handle_pending_frame(frame_entry)
 
 
 def main(args=None):

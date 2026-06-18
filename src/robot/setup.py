@@ -7,6 +7,7 @@ _LAUNCH = [
     'launch/behaviour_recorder.py',
     'launch/robot_behavmodel.py',
     'launch/robot_teleop.py',
+    'launch/robot_teleop_aug.py',
     'launch/sensing_control.py',
     'launch/sim_behavmodel.py',
     'launch/sim_teleop.py',

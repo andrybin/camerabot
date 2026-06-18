@@ -7,7 +7,8 @@ import time
 import tty
 
 import rclpy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TwistStamped
+from rclpy.duration import Duration
 from rclpy.node import Node
 
 
@@ -18,16 +19,25 @@ class KeyboardTeleopNode(Node):
         # Parameters for movement speeds
         self.declare_parameter('linear_speed', 0.1)
         self.declare_parameter('angular_speed', 0.1)
-        self.declare_parameter('max_speed', 0.5)
+        self.declare_parameter('max_lin_speed', 0.5)
+        self.declare_parameter('max_ang_speed', 0.5)
         self.declare_parameter('cmd_vel_topic', 'cmd_vel')
+        self.declare_parameter('cmd_vel_frame_id', 'base_link')
+        self.declare_parameter('command_stamp_offset_ms', 100.0)
         self.linear_speed = float(self.get_parameter('linear_speed').value)
         self.angular_speed = float(self.get_parameter('angular_speed').value)
-        self.max_speed = float(self.get_parameter('max_speed').value)
+        self.max_lin_speed = float(self.get_parameter('max_lin_speed').value)
+        self.max_ang_speed = float(self.get_parameter('max_ang_speed').value)
         cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
+        self._cmd_vel_frame_id = (
+            self.get_parameter('cmd_vel_frame_id').get_parameter_value().string_value
+        )
+        offset_ms = float(self.get_parameter('command_stamp_offset_ms').value)
+        self._command_stamp_offset_ns = int(offset_ms * 1_000_000)
         self.command_changed = False
         self.last_command_is_lin = False
-        
-        self.cmd_vel_publisher = self.create_publisher(Twist, cmd_vel_topic, 1)
+        self._command_stamp = None
+        self.cmd_vel_publisher = self.create_publisher(TwistStamped, cmd_vel_topic, 1)
         self.current_twist = Twist()
         self.publish_timer = self.create_timer(0.1, self._publish_current_command)
 
@@ -65,16 +75,31 @@ class KeyboardTeleopNode(Node):
             self._keyboard_thread = threading.Thread(target=self._keyboard_loop, daemon=True)
             self._keyboard_thread.start()
 
-        self.get_logger().info('Keyboard teleop started. Use arrow keys to move, space to stop.')
+        self.get_logger().info(
+            'Keyboard teleop started. Use arrow keys to move, space to stop. '
+            f'command_stamp_offset_ms={offset_ms:.1f}'
+        )
+
+    def _command_stamp_msg(self):
+        stamp = self.get_clock().now()
+        if self._command_stamp_offset_ns:
+            stamp = stamp + Duration(nanoseconds=self._command_stamp_offset_ns)
+        return stamp.to_msg()
+
+    def _mark_command_changed(self):
+        self.command_changed = True
+        self._command_stamp = self._command_stamp_msg()
 
     def _increment_linear_speed(self, speed):
         if self.last_command_is_lin:
             self.current_twist.linear.x += speed
         else:
             self.current_twist.linear.x = speed
-        if abs(self.current_twist.linear.x) > self.max_speed:
-            self.current_twist.linear.x = self.max_speed if self.current_twist.linear.x > 0 else -self.max_speed
-        self.command_changed = True
+        if abs(self.current_twist.linear.x) > self.max_lin_speed:
+            self.current_twist.linear.x = (
+                self.max_lin_speed if self.current_twist.linear.x > 0 else -self.max_lin_speed
+            )
+        self._mark_command_changed()
         self.last_command_is_lin = True
 
     def _increment_angular_speed(self, speed):
@@ -82,13 +107,22 @@ class KeyboardTeleopNode(Node):
             self.current_twist.angular.z = 0.
         
         self.current_twist.angular.z += speed
-        if abs(self.current_twist.angular.z) > self.max_speed:
-            self.current_twist.angular.z = self.max_speed if self.current_twist.angular.z > 0 else -self.max_speed
-        self.command_changed = True
+        if abs(self.current_twist.angular.z) > self.max_ang_speed:
+            self.current_twist.angular.z = (
+                self.max_ang_speed if self.current_twist.angular.z > 0 else -self.max_ang_speed
+            )
+        self._mark_command_changed()
         self.last_command_is_lin = False
 
     def _publish_current_command(self):
-        self.cmd_vel_publisher.publish(self.current_twist)
+        stamped = TwistStamped()
+        if self._command_stamp is not None:
+            stamped.header.stamp = self._command_stamp
+        else:
+            stamped.header.stamp = self._command_stamp_msg()
+        stamped.header.frame_id = self._cmd_vel_frame_id
+        stamped.twist = self.current_twist
+        self.cmd_vel_publisher.publish(stamped)
         if self.command_changed:
             self.get_logger().info(f'Published cmd_vel: linear.x={self.current_twist.linear.x:.2f}, angular.z={self.current_twist.angular.z:.2f}')
             self.command_changed = False
@@ -178,6 +212,7 @@ class KeyboardTeleopNode(Node):
     def _stop_robot(self):
         self.current_twist.linear.x = 0.0
         self.current_twist.angular.z = 0.0
+        self._mark_command_changed()
         self.get_logger().info('⛔ Stop')
 
 
