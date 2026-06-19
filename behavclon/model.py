@@ -17,6 +17,7 @@ ImgSize: TypeAlias = tuple[int, int]
 class BehaviourCloneModelCfg:
     img_size: ImgSize | list[int]
     frozen_bacbone: bool = False
+    head_dropout: float = 0.0
     init_ckpt: str | None = None
 
 
@@ -42,7 +43,11 @@ class BehaviourCloneModel(nn.Module):
             for param in self.features.parameters():
                 param.requires_grad = False
         self.avgpool = backbone.avgpool
-        self.head = nn.Sequential(nn.Linear(int(feat_dim), 2), nn.Tanh())
+        head_layers: list[nn.Module] = []
+        if cfg.head_dropout > 0:
+            head_layers.append(nn.Dropout(cfg.head_dropout))
+        head_layers.extend([nn.Linear(int(feat_dim), 2), nn.Tanh()])
+        self.head = nn.Sequential(*head_layers)
 
         if cfg.init_ckpt:
             self._load_checkpoint(Path(cfg.init_ckpt))

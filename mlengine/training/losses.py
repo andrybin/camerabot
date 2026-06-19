@@ -15,7 +15,7 @@ class LossCfg:
 @dataclass
 class WeightsRegularizationCfg:
     regularization_names: list[str]
-    regularization_weights: list[float]
+    regularization_weights: list[float] | None = None
 
 
 class Loss(nn.Module):
@@ -42,7 +42,7 @@ class WeightsRegularization(nn.Module):
         self.regularizations = [
             getattr(self, regularization_name) for regularization_name in self.cfg.regularization_names
         ]
-        self.regularization_weights = self.cfg.regularization_weights
+        self.regularization_weights = self.cfg.regularization_weights or [0.0] * len(self.regularizations)
         self._params: list[nn.Parameter] = []
 
     def set_params(self, params: Iterable[nn.Parameter]) -> None:
