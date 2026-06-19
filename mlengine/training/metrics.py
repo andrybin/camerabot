@@ -11,6 +11,11 @@ class BaseMetric(Metric):
     def __str__(self) -> str:
         return self.__class__.__name__
 
+class AngularDirectionAccuracy(BaseMetric):
+    def __call__(self, logits: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        preds = torch.sign(logits[:, 1])
+        targets = torch.sign(targets[:, 1])
+        return (preds == targets).float().mean()
 
 class BinaryIOU(BaseMetric):
     def __init__(self, threshold: float = 0.5):

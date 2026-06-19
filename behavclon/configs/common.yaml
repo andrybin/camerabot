@@ -1,7 +1,7 @@
 data_dir: behavclon/dataset
 img_size: [128, 64]
 val_frac: 0.1
-seed: 0
+seed: 1
 source_dir: behavclon/records
 work_dir: behavclon/work_dirs
 
@@ -27,6 +27,7 @@ dataset_train_val_splitter:
     val: 0.2
   train_markup_filename: markup_train.json
   val_markup_filename: markup_val.json
+  random_seed: ${seed}
 
 train_dataset:
   type: behavclon.loader.BehaviourCloneDataset
@@ -59,12 +60,12 @@ model:
   type: behavclon.model.BehaviourCloneModel
   img_size: ${img_size}
   frozen_bacbone: true
-  init_ckpt: null
+  init_ckpt: ${work_dir}/last.pth
 
 train_pipeline:
   type: mlengine.training.TrainValPipeline
   device: auto
-  epochs: 1000
+  epochs: 100
   val_interval: 1
   batch_size: 32
   shuffle: true
@@ -72,15 +73,15 @@ train_pipeline:
   amp: false
   output_dir: ${work_dir}
   metrics:
-    f1:
-      type: mlengine.training.metrics.MulticlassF1
+    angular_direction_accuracy:
+      type: mlengine.training.metrics.AngularDirectionAccuracy
   train_dataset: ${train_dataset}
   val_dataset: ${val_dataset}
   model: ${model}
   optimizer:
     type: mlengine.training.optimizers.AdamWOptimizer
-    lr: 1.0e-5
-    weight_decay: 1.0e-2
+    lr: 1.0e-3
+    weight_decay: 1.0e-8
   loss:
     type: mlengine.training.losses.Loss
     loss_names: [mse]
@@ -88,7 +89,7 @@ train_pipeline:
   weights_regularization:
     type: mlengine.training.losses.WeightsRegularization
     regularization_names: [l2_norm]
-    regularization_weights: [1.0e-3]
+    regularization_weights: [1.0e-8]
   monitor:
     type: mlengine.training.monitoring.TensorBoardMonitor
     logdir: ${work_dir}/tensorboard
@@ -97,5 +98,5 @@ train_pipeline:
 export:
   type: behavclon.deploy.BehaviourCloneDeploy
   model: ${model}
-  ckpt: ${work_dir}/best.pth
+  ckpt: ${work_dir}/last.pth
   output_path: ${work_dir}/model.onnx
