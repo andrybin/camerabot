@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeAlias
@@ -30,7 +29,6 @@ class BehaviourCloneDatasetCfg:
     data_dir: str
     img_size: list[int] | ImgSize = (128, 64)
     split: str = "train"
-    val_frac: float = 0.1
     seed: int = 0
     markup_filename: str = "markup.json"
     image_serializer: ImageFileSerializer | None = None
@@ -48,7 +46,6 @@ class BehaviourCloneDataset(Dataset):
         else:
             self.img_size = tuple(cfg.img_size)
         self.split = cfg.split
-        self.val_frac = cfg.val_frac
         self.seed = cfg.seed
         self.markup_filename = cfg.markup_filename
         self.augmentations = cfg.augmentations
@@ -80,31 +77,16 @@ class BehaviourCloneDataset(Dataset):
             if frames:
                 self.scene_frames.append(frames)
 
-        all_indices: list[tuple[int, int]] = []
-        for scene_idx, frames in enumerate(self.scene_frames):
-            for frame_idx in range(len(frames)):
-                all_indices.append((scene_idx, frame_idx))
-
-        rng = random.Random(self.seed)
-        rng.shuffle(all_indices)
-        val_count = int(len(all_indices) * self.val_frac)
-        val_set = set(all_indices[:val_count])
-
         self.samples = []
-        for scene_idx, frame_idx in all_indices:
-            is_val = (scene_idx, frame_idx) in val_set
-            if self.split == "val" and not is_val:
-                continue
-            if self.split == "train" and is_val:
-                continue
-            image_filename, target = self.scene_frames[scene_idx][frame_idx]
-            self.samples.append(
-                BehaviourCloneSample(
-                    id=Path(image_filename).stem,
-                    image_filename=image_filename,
-                    target=target,
+        for frames in self.scene_frames:
+            for image_filename, target in frames:
+                self.samples.append(
+                    BehaviourCloneSample(
+                        id=Path(image_filename).stem,
+                        image_filename=image_filename,
+                        target=target,
+                    )
                 )
-            )
 
     def _load_image_array(self, image_filename: str) -> np.ndarray:
         image = self.image_serializer(image_filename).load()
