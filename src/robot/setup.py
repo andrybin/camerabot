@@ -11,7 +11,7 @@ _LAUNCH = [
     'launch/sensing_control.py',
     'launch/sim_behavmodel.py',
     'launch/sim_teleop.py',
-    'launch/sim_teleop_augmented.py',
+    'launch/sim_teleop_aug.py',
     'launch/vlm_control_sim.py',
     'launch/vlm_control_ugv.py',
     'launch/vlm_monitor.py',
