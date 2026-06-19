@@ -17,6 +17,9 @@ converter:
   markup_filename: markup.json
   image_serializer: ${image_serializer}
   target_label: control
+  augmentations:
+    type: behavclon.augmentation.ImageAugmentations
+    resize_center_crop: ${img_size}
 
 dataset_train_val_splitter:
   type: mlengine.dataset.TrainValSplitter
@@ -38,15 +41,14 @@ train_dataset:
   image_serializer: ${image_serializer}
   augmentations:
     type: behavclon.augmentation.ImageAugmentations
-    resize_center_crop: ${img_size}
     flip_h: 0.5
     brightness:
       prob: 0.5
-      factor: [0.85, 1.15]
+      factor: [0.75, 1.25]
     color:
       prob: 0.5
       hue_delta: 10
-      saturation_factor: [0.9, 1.1]
+      saturation_factor: [0.8, 1.2]
 
 val_dataset:
   type: behavclon.loader.BehaviourCloneDataset
@@ -58,20 +60,19 @@ val_dataset:
   image_serializer: ${image_serializer}
   augmentations:
     type: behavclon.augmentation.ImageAugmentations
-    resize_center_crop: ${img_size}
 
 model:
   type: behavclon.model.BehaviourCloneModel
   img_size: ${img_size}
   frozen_bacbone: true
-  head_dropout: 0.25
+  head_dropout: 0.0
   init_ckpt: null
 
 train_pipeline:
   type: mlengine.training.TrainValPipeline
   device: auto
-  epochs: 300
-  val_interval: 1
+  epochs: 600
+  val_interval: 5
   batch_size: 64
   shuffle: true
   num_workers: 0
@@ -85,8 +86,8 @@ train_pipeline:
   model: ${model}
   optimizer:
     type: mlengine.training.optimizers.AdamWOptimizer
-    lr: 0.001
-    weight_decay: 1.0e-3
+    lr: 0.0001
+    weight_decay: 1.0e-6
   loss:
     type: mlengine.training.losses.Loss
     loss_names: [mse]

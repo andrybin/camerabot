@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
+from behavclon.augmentation import ImageAugmentations
 from behavclon.common import ControlCommandMarkup, parse_control_code
 from mlengine.dataset.serializers import ImageFileSerializer
 from mlengine.common.type import Frame, Markup, Scene
@@ -23,6 +24,7 @@ class BehaviourRecorderConverterCfg:
     markup_filename: str = "markup.json"
     image_serializer: ImageFileSerializer | None = None
     target_label: str = "control"
+    augmentations: ImageAugmentations | None = None
 
 
 class BehaviourRecorderConverter:
@@ -36,6 +38,7 @@ class BehaviourRecorderConverter:
         if cfg.image_serializer is None:
             raise ValueError("image_serializer is required")
         self.image_serializer = cfg.image_serializer
+        self.augmentations = cfg.augmentations
         self._used_image_names: set[str] = set()
 
     def prepare(self) -> Markup:
@@ -101,6 +104,8 @@ class BehaviourRecorderConverter:
             raise ValueError(f"Duplicate image name for stamp {stamp_ns} in scene {scene_id}")
 
         image = np.array(Image.open(source_path).convert(self.image_serializer.cfg.mode))
+        if self.augmentations is not None:
+            image, _ = self.augmentations(image, None).apply_all()
         saved_name = self.image_serializer(image_filename).save(image)
         self._used_image_names.add(saved_name)
         return saved_name
