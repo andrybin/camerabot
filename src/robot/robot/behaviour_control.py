@@ -11,7 +11,7 @@ import onnx
 import onnxruntime as ort
 import rclpy
 from cv_bridge import CvBridge
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TwistStamped
 from rclpy.node import Node
 from rclpy.qos import (
     QoSDurabilityPolicy,
@@ -85,6 +85,7 @@ class BehaviourControlNode(Node):
         self.declare_parameter('weights_path', '')
         self.declare_parameter('camera_topic', '/camera/image_color')
         self.declare_parameter('cmd_vel_topic', 'cmd_vel')
+        self.declare_parameter('cmd_vel_frame_id', 'base_link')
         self.declare_parameter('max_lin_speed', 0.5)
         self.declare_parameter('max_ang_speed', 0.5)
         self.declare_parameter('device', 'cpu')
@@ -98,6 +99,9 @@ class BehaviourControlNode(Node):
         )
         self._camera_topic = self.get_parameter('camera_topic').get_parameter_value().string_value
         cmd_vel_topic = self.get_parameter('cmd_vel_topic').get_parameter_value().string_value
+        self._cmd_vel_frame_id = (
+            self.get_parameter('cmd_vel_frame_id').get_parameter_value().string_value
+        )
         self._max_lin = float(self.get_parameter('max_lin_speed').get_parameter_value().double_value)
         self._max_ang = float(self.get_parameter('max_ang_speed').get_parameter_value().double_value)
         device_str = self.get_parameter('device').get_parameter_value().string_value.strip().lower()
@@ -164,7 +168,7 @@ class BehaviourControlNode(Node):
         self._bridge = CvBridge()
         self._past_buf: deque = deque(maxlen=self._num_past)
 
-        self._cmd_pub = self.create_publisher(Twist, cmd_vel_topic, 1)
+        self._cmd_pub = self.create_publisher(TwistStamped, cmd_vel_topic, 1)
         self.create_subscription(RosImage, self._camera_topic, self._image_callback, _IMAGE_QOS)
 
         self._latest_twist = Twist()
@@ -181,6 +185,13 @@ class BehaviourControlNode(Node):
             f'cmd_vel={cmd_vel_topic!r} timer_hz={rate_hz} '
             f'head_tanh={self._head_tanh} target_space_atanh={self._target_space_atanh}'
         )
+
+    def _stamped_twist(self, twist: Twist) -> TwistStamped:
+        stamped = TwistStamped()
+        stamped.header.stamp = self.get_clock().now().to_msg()
+        stamped.header.frame_id = self._cmd_vel_frame_id
+        stamped.twist = twist
+        return stamped
 
     def _image_callback(self, msg: RosImage):
         try:
@@ -217,14 +228,14 @@ class BehaviourControlNode(Node):
         self._past_buf.append(cur_chw.copy())
 
         if self._timer is None:
-            self._cmd_pub.publish(twist)
+            self._cmd_pub.publish(self._stamped_twist(twist))
         else:
             self._latest_twist = twist
             self._have_cmd = True
 
     def _timer_publish(self):
         if self._have_cmd:
-            self._cmd_pub.publish(self._latest_twist)
+            self._cmd_pub.publish(self._stamped_twist(self._latest_twist))
 
 
 def main(args=None):
