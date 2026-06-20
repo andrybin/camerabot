@@ -1,7 +1,7 @@
 from abc import abstractmethod
 
 import rclpy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, TwistStamped
 from rclpy.node import Node
 
 HALF_DISTANCE_BETWEEN_WHEELS = 1.
@@ -29,11 +29,12 @@ class BaseDriver(Node):
         self._target_twist = Twist()
         self.max_steps_without_command = max_steps_without_command
         self.steps_without_command = 0
-        self.create_subscription(Twist, cmd_vel_topic, self._cmd_vel_callback, 1)
+        self.create_subscription(TwistStamped, cmd_vel_topic, self._cmd_vel_callback, 1)
         self.command_changed = False
         self.get_logger().info(f'Listening on {cmd_vel_topic!r}')
 
-    def _cmd_vel_callback(self, twist):
+    def _cmd_vel_callback(self, msg: TwistStamped):
+        twist = msg.twist
         if twist != self._target_twist:
             self.command_changed = True
         self._target_twist = twist
