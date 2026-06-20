@@ -67,8 +67,7 @@ def _format_time_ns(stamp_ns: int) -> str:
 class _PendingRecord:
     cmd_stamp_ns: int
     twist: Twist
-    best_entry: tuple[int, object] | None = None
-    best_diff_ns: int | None = None
+    image_entry: tuple[int, object] | None = None
 
 
 class BehaviourRecorderNode(Node):
@@ -144,41 +143,41 @@ class BehaviourRecorderNode(Node):
         ):
             return
 
-        self._pending_record = _PendingRecord(cmd_stamp_ns, deepcopy(twist))
-        if self._frame_buffer:
-            self._set_pending_best_entry(
-                min(self._frame_buffer, key=lambda entry: abs(entry[0] - cmd_stamp_ns))
-            )
-        else:
-            self.get_logger().warn('No image received yet; waiting for image before behaviour record')
+        self._pending_record = _PendingRecord(
+            cmd_stamp_ns, deepcopy(twist), self._latest_image_before(cmd_stamp_ns)
+        )
+        if self._has_image_at_or_after(cmd_stamp_ns):
+            self._save_pending_record('image at/after cmd already in buffer')
 
-    def _set_pending_best_entry(self, entry: tuple[int, object]) -> None:
+    def _latest_image_before(self, cmd_stamp_ns: int) -> tuple[int, object] | None:
+        """Most recent buffered frame strictly before cmd_stamp_ns."""
+        before = [entry for entry in self._frame_buffer if entry[0] < cmd_stamp_ns]
+        if not before:
+            return None
+        return max(before, key=lambda entry: entry[0])
+
+    def _has_image_at_or_after(self, cmd_stamp_ns: int) -> bool:
+        return any(entry[0] >= cmd_stamp_ns for entry in self._frame_buffer)
+
+    def _update_pending_image(self, entry: tuple[int, object]) -> None:
         if self._pending_record is None:
             return
 
         image_stamp_ns, _ = entry
-        diff_ns = abs(image_stamp_ns - self._pending_record.cmd_stamp_ns)
-        self._pending_record.best_entry = entry
-        self._pending_record.best_diff_ns = diff_ns
-
-    def _handle_pending_frame(self, entry: tuple[int, object]) -> None:
-        if self._pending_record is None:
+        cmd_stamp_ns = self._pending_record.cmd_stamp_ns
+        if image_stamp_ns < cmd_stamp_ns:
+            current = self._pending_record.image_entry
+            if current is None or image_stamp_ns > current[0]:
+                self._pending_record.image_entry = entry
             return
 
-        image_stamp_ns, _ = entry
-        diff_ns = abs(image_stamp_ns - self._pending_record.cmd_stamp_ns)
-        best_diff_ns = self._pending_record.best_diff_ns
-        if best_diff_ns is not None and diff_ns > best_diff_ns:
-            self._save_pending_record('image diff started increasing')
-            return
-
-        self._set_pending_best_entry(entry)
+        self._save_pending_record('first image at/after cmd')
 
     def _save_pending_record(self, reason: str) -> bool:
         pending_record = self._pending_record
         if pending_record is None:
             return False
-        if pending_record.best_entry is None:
+        if pending_record.image_entry is None:
             self.get_logger().warn(
                 f'No image received for cmd at {_format_time_ns(pending_record.cmd_stamp_ns)}; '
                 f'skipping behaviour record'
@@ -186,7 +185,7 @@ class BehaviourRecorderNode(Node):
             self._pending_record = None
             return False
 
-        image_stamp_ns, cv_image = pending_record.best_entry
+        image_stamp_ns, cv_image = pending_record.image_entry
         saved = self._save_record(
             pending_record.cmd_stamp_ns,
             pending_record.twist,
@@ -231,7 +230,7 @@ class BehaviourRecorderNode(Node):
         self._last_recorded_twist = twist
         self.get_logger().info(
             f'Saved {filename} ({reason}, '
-            f'cmd={_format_time_ns(cmd_stamp_ns)}, image={_format_time_ns(image_stamp_ns)}, '
+            # f'cmd={_format_time_ns(cmd_stamp_ns)}, image={_format_time_ns(image_stamp_ns)}, '
             f'cmd-image Δ={delta_ms:+.1f} ms, '
             f'image {"before" if delta_ms < 0 else "after"} cmd)'
         )
@@ -288,7 +287,7 @@ class BehaviourRecorderNode(Node):
         frame_stamp_ns = _image_stamp_ns(msg, recv_ns)
         frame_entry = (frame_stamp_ns, cv_image.copy())
         self._frame_buffer.append(frame_entry)
-        self._handle_pending_frame(frame_entry)
+        self._update_pending_image(frame_entry)
 
 
 def main(args=None):
