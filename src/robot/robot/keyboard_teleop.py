@@ -21,7 +21,7 @@ class KeyboardTeleopNode(Node):
         self.declare_parameter('angular_speed', 0.1)
         self.declare_parameter('max_lin_speed', 0.5)
         self.declare_parameter('max_ang_speed', 0.5)
-        self.declare_parameter('cmd_vel_topic', 'cmd_vel')
+        self.declare_parameter('cmd_vel_topic', 'cmd_vel_teleop')
         self.declare_parameter('cmd_vel_frame_id', 'base_link')
         self.declare_parameter('command_stamp_offset_ms', 100.0)
         self.linear_speed = float(self.get_parameter('linear_speed').value)
