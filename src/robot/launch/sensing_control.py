@@ -6,18 +6,19 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
-    camera_source = LaunchConfiguration('camera_source', default='picam2')
-    camera_width = ParameterValue(LaunchConfiguration('camera_width', default='640'), value_type=int)
-    camera_height = ParameterValue(LaunchConfiguration('camera_height', default='480'), value_type=int)
-    camera_fps = ParameterValue(LaunchConfiguration('camera_fps', default='30'), value_type=int)
-    camera_frame_id = LaunchConfiguration('camera_frame_id', default='camera')
-    camera_encoding = LaunchConfiguration('camera_encoding', default='rgb8')
-    camera_show_image = ParameterValue(LaunchConfiguration('camera_show_image', default='false'), value_type=bool)
-    camera_topic = LaunchConfiguration('camera_topic', default='/camera/image_color')
+    camera_source = LaunchConfiguration('camera_source')
+    camera_width = ParameterValue(LaunchConfiguration('camera_width'), value_type=int)
+    camera_height = ParameterValue(LaunchConfiguration('camera_height'), value_type=int)
+    camera_fps = ParameterValue(LaunchConfiguration('camera_fps'), value_type=int)
+    camera_frame_id = LaunchConfiguration('camera_frame_id')
+    camera_encoding = LaunchConfiguration('camera_encoding')
+    camera_show_image = ParameterValue(LaunchConfiguration('camera_show_image'), value_type=bool)
+    camera_topic = LaunchConfiguration('camera_topic')
 
-    ugv_uart = LaunchConfiguration('ugv_uart', default='/dev/ttyAMA0')
-    ugv_baud = LaunchConfiguration('ugv_baud', default='115200')
-
+    ugv_uart = LaunchConfiguration('ugv_uart')
+    ugv_baud = LaunchConfiguration('ugv_baud')
+    cmd_vel_topic = LaunchConfiguration('cmd_vel_topic')
+    
     camera_node = Node(
         package='robot',
         executable='camera',
@@ -44,19 +45,23 @@ def generate_launch_description():
             'UGV_UART': ugv_uart,
             'UGV_BAUD': ugv_baud,
         },
+        remappings=[
+            ('cmd_vel', cmd_vel_topic),
+        ],
     )
 
     return LaunchDescription([
         DeclareLaunchArgument('camera_source', default_value='picam2'),
         DeclareLaunchArgument('camera_width', default_value='640'),
         DeclareLaunchArgument('camera_height', default_value='480'),
-        DeclareLaunchArgument('camera_fps', default_value='30'),
+        DeclareLaunchArgument('camera_fps', default_value='10'),
         DeclareLaunchArgument('camera_frame_id', default_value='camera'),
         DeclareLaunchArgument('camera_encoding', default_value='rgb8'),
         DeclareLaunchArgument('camera_show_image', default_value='false'),
         DeclareLaunchArgument('camera_topic', default_value='/camera/image_color'),
         DeclareLaunchArgument('ugv_uart', default_value='/dev/ttyAMA0'),
         DeclareLaunchArgument('ugv_baud', default_value='115200'),
+        DeclareLaunchArgument('cmd_vel_topic', default_value='cmd_vel'),
         camera_node,
         ugv_driver,
     ])

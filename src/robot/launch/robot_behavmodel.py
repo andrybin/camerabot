@@ -7,33 +7,33 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     """Launch UGV driver, camera, and behaviour-clone policy for real robot navigation."""
-    camera_source = LaunchConfiguration('camera_source', default='picam2')
-    camera_width = ParameterValue(LaunchConfiguration('camera_width', default='640'), value_type=int)
-    camera_height = ParameterValue(LaunchConfiguration('camera_height', default='480'), value_type=int)
-    camera_fps = ParameterValue(LaunchConfiguration('camera_fps', default='30'), value_type=int)
-    camera_frame_id = LaunchConfiguration('camera_frame_id', default='camera')
-    camera_encoding = LaunchConfiguration('camera_encoding', default='rgb8')
-    camera_show_image = ParameterValue(LaunchConfiguration('camera_show_image', default='false'), value_type=bool)
-    camera_topic = LaunchConfiguration('camera_topic', default='/camera/image_color')
+    camera_source = LaunchConfiguration('camera_source')
+    camera_width = ParameterValue(LaunchConfiguration('camera_width'), value_type=int)
+    camera_height = ParameterValue(LaunchConfiguration('camera_height'), value_type=int)
+    camera_fps = ParameterValue(LaunchConfiguration('camera_fps'), value_type=int)
+    camera_frame_id = LaunchConfiguration('camera_frame_id')
+    camera_encoding = LaunchConfiguration('camera_encoding')
+    camera_show_image = ParameterValue(LaunchConfiguration('camera_show_image'), value_type=bool)
+    camera_topic = LaunchConfiguration('camera_topic')
 
-    ugv_uart = LaunchConfiguration('ugv_uart', default='/dev/ttyAMA0')
-    ugv_baud = LaunchConfiguration('ugv_baud', default='115200')
+    ugv_uart = LaunchConfiguration('ugv_uart')
+    ugv_baud = LaunchConfiguration('ugv_baud')
 
-    weights_path = LaunchConfiguration('weights_path', default='behavclon/model.onnx')
-    cmd_vel_topic = LaunchConfiguration('cmd_vel_topic', default='cmd_vel')
-    device = LaunchConfiguration('device', default='cpu')
+    weights_path = LaunchConfiguration('weights_path')
+    cmd_vel_topic = LaunchConfiguration('cmd_vel_topic')
+    device = LaunchConfiguration('device')
 
     max_lin_speed = ParameterValue(
-        LaunchConfiguration('max_lin_speed', default='0.5'), value_type=float
+        LaunchConfiguration('max_lin_speed'), value_type=float
     )
     max_ang_speed = ParameterValue(
-        LaunchConfiguration('max_ang_speed', default='0.5'), value_type=float
+        LaunchConfiguration('max_ang_speed'), value_type=float
     )
-    num_past = ParameterValue(LaunchConfiguration('num_past', default='3'), value_type=int)
-    img_width = ParameterValue(LaunchConfiguration('img_width', default='128'), value_type=int)
-    img_height = ParameterValue(LaunchConfiguration('img_height', default='64'), value_type=int)
+    num_past = ParameterValue(LaunchConfiguration('num_past'), value_type=int)
+    img_width = ParameterValue(LaunchConfiguration('img_width'), value_type=int)
+    img_height = ParameterValue(LaunchConfiguration('img_height'), value_type=int)
     publish_rate_hz = ParameterValue(
-        LaunchConfiguration('publish_rate_hz', default='0.0'), value_type=float
+        LaunchConfiguration('publish_rate_hz'), value_type=float
     )
 
     camera_node = Node(
@@ -91,7 +91,7 @@ def generate_launch_description():
             DeclareLaunchArgument('camera_source', default_value='picam2'),
             DeclareLaunchArgument('camera_width', default_value='640'),
             DeclareLaunchArgument('camera_height', default_value='480'),
-            DeclareLaunchArgument('camera_fps', default_value='30'),
+            DeclareLaunchArgument('camera_fps', default_value='5'),
             DeclareLaunchArgument('camera_frame_id', default_value='camera'),
             DeclareLaunchArgument('camera_encoding', default_value='rgb8'),
             DeclareLaunchArgument('camera_show_image', default_value='false'),
@@ -116,12 +116,12 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'max_lin_speed',
-                default_value='0.5',
+                default_value='0.15',
                 description='Max linear speed (m/s); must match training/recorder scaling.',
             ),
             DeclareLaunchArgument(
                 'max_ang_speed',
-                default_value='0.5',
+                default_value='0.3',
                 description='Max angular speed (rad/s); must match training/recorder scaling.',
             ),
             DeclareLaunchArgument(
@@ -131,7 +131,7 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 'num_past',
-                default_value='4',
+                default_value='0',
                 description='Past-frame stack size (checkpoint usually overrides).',
             ),
             DeclareLaunchArgument(
